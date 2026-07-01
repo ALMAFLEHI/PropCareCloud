@@ -1,0 +1,42 @@
+# PropCare Cloud
+
+PropCare Cloud is a planned cloud-based property maintenance and tenant service portal for managing rental property support requests, tenant communication, maintenance workflows, and owner oversight.
+
+## Assignment
+
+- Module: CT071-3-3-DDAC Designing and Developing Applications on the Cloud
+- Chosen industry: Property Management
+- Methodology: Agile Iterative Development
+
+## Main Architecture
+
+The planned solution uses a separated frontend and backend architecture:
+
+```text
+React frontend -> ASP.NET Core Web API -> EF Core -> Amazon RDS PostgreSQL
+```
+
+This keeps the user interface, business logic, and data persistence responsibilities separate and easier to extend across the assignment tasks.
+
+## Planned Tech Stack
+
+- Frontend: React with Vite
+- Backend: ASP.NET Core Web API
+- Data access: Entity Framework Core
+- Database: PostgreSQL hosted on Amazon RDS
+- Version control: Git
+- Documentation: Markdown under the `docs/` folder
+- Scripts: PowerShell helper scripts under the `scripts/` folder
+
+## Planned AWS Services
+
+- Amazon RDS for PostgreSQL
+- Amazon S3 for document or image storage
+- Amazon API Gateway for cloud API exposure
+- AWS Lambda for selected serverless workflows
+- Amazon SNS or SQS for notifications and maintenance workflow messaging
+- Amazon CloudWatch and AWS X-Ray for monitoring, logs, and tracing
+
+## Sprint Workflow Summary
+
+The project will be developed iteratively. Sprint 1 prepares the workspace, folder structure, documentation, and environment checks. Later sprints will introduce the React frontend, ASP.NET Core Web API, database design, cloud integration, security, deployment, and monitoring.
