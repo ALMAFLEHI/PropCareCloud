@@ -41,6 +41,7 @@ dotnet test .\backend\PropCareCloud.sln
 - `GET /api/health`
 - `GET /api/system-info`
 - `GET /api/domain-summary`
+- `GET /api/database/status`
 
 ## Sprint 4 Database Domain Foundation
 
@@ -63,6 +64,31 @@ EF Core additions:
 - Planned database provider: Amazon RDS PostgreSQL
 
 The application only registers `AppDbContext` when a `DefaultConnection` connection string exists. The current `appsettings.json` contains an empty placeholder only.
+
+## Sprint 5 Migration and PostgreSQL Setup
+
+Sprint 5 adds the EF Core migration and safe PostgreSQL setup foundation.
+
+- EF Core Design package added for migration tooling.
+- Local `dotnet-ef` tool configured through `.config/dotnet-tools.json`.
+- Initial migration created: `InitialCreate`.
+- Migration files: `backend/src/PropCareCloud.Api/Data/Migrations`.
+- Local PostgreSQL setup documentation: `docs/architecture/postgresql_local_setup.md`.
+- Database status endpoint added: `GET /api/database/status`.
+
+Validation command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-database-migration.ps1
+```
+
+Optional local database update command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\update-local-database.ps1
+```
+
+The optional update script requires `PROPCLOUD_CONNECTION_STRING` to be set and does not print the connection string.
 
 ## Notes
 

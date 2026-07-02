@@ -81,3 +81,17 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
 ```
 
 RDS setup, real connection strings, and migrations will be handled in a later sprint.
+
+## Sprint 5 Database Migration Setup
+
+- EF Core migration foundation added.
+- Initial migration: `InitialCreate`.
+- PostgreSQL setup documentation: `docs/architecture/postgresql_local_setup.md`
+- Database status endpoint: `GET /api/database/status`
+- Validation command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-database-migration.ps1
+```
+
+Real database credentials, RDS connectivity, and cloud deployment are still deferred to later sprints.

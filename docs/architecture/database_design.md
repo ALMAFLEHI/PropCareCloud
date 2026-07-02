@@ -58,3 +58,14 @@ Property
 - Notifications may later use Amazon SNS or SQS when requests are assigned, updated, or completed.
 - The backend will later connect to Amazon RDS PostgreSQL using a secure connection string outside source control.
 - Cloud monitoring can later be connected through CloudWatch and X-Ray.
+
+## Sprint 5 Migration Foundation
+
+- Initial EF Core migration created: `InitialCreate`
+- Migration files location: `backend/src/PropCareCloud.Api/Data/Migrations`
+- PostgreSQL provider confirmed: `Npgsql.EntityFrameworkCore.PostgreSQL` 8.0.x
+- Local EF tool configured: `dotnet-ef` 8.0.x through `.config/dotnet-tools.json`
+- Real database update deferred.
+- Amazon RDS connection deferred to a later cloud sprint.
+
+Sprint 5 prepares the schema migration foundation without requiring PostgreSQL to be installed and without storing any real database credentials.

@@ -27,6 +27,7 @@ builder.Services.AddCors(options =>
 });
 builder.Services.AddSingleton<IApplicationInfoService, ApplicationInfoService>();
 builder.Services.AddSingleton<IDomainSummaryService, DomainSummaryService>();
+builder.Services.AddSingleton<IDatabaseStatusService, DatabaseStatusService>();
 
 var app = builder.Build();
 
@@ -36,7 +37,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseCors(frontendDevelopmentPolicy);
 
