@@ -40,3 +40,14 @@ This keeps the user interface, business logic, and data persistence responsibili
 ## Sprint Workflow Summary
 
 The project will be developed iteratively. Sprint 1 prepares the workspace, folder structure, documentation, and environment checks. Later sprints will introduce the React frontend, ASP.NET Core Web API, database design, cloud integration, security, deployment, and monitoring.
+
+## Sprint 2 Backend Foundation
+
+- Backend solution: `backend/PropCareCloud.sln`
+- API project: `backend/src/PropCareCloud.Api`
+- Test project: `backend/tests/PropCareCloud.Api.Tests`
+- Validation command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
+```

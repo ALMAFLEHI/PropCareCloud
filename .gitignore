@@ -42,6 +42,7 @@ temp/
 .env.*
 !.env.example
 appsettings.Development.json
+!backend/src/PropCareCloud.Api/appsettings.Development.json
 appsettings.Local.json
 secrets.json
 *.secret.json

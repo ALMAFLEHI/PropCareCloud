@@ -1,0 +1,11 @@
+@PropCareCloud.Api_HostAddress = http://localhost:5015
+
+GET {{PropCareCloud.Api_HostAddress}}/api/health
+Accept: application/json
+
+###
+
+GET {{PropCareCloud.Api_HostAddress}}/api/system-info
+Accept: application/json
+
+###
