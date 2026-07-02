@@ -68,3 +68,16 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
 cd frontend
 npm run dev
 ```
+
+## Sprint 4 Database Domain Foundation
+
+- Database/domain model foundation created in `backend/src/PropCareCloud.Api/Domain`
+- EF Core `AppDbContext` created in `backend/src/PropCareCloud.Api/Data/AppDbContext.cs`
+- Planned database provider: Amazon RDS PostgreSQL
+- Validation command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
+```
+
+RDS setup, real connection strings, and migrations will be handled in a later sprint.

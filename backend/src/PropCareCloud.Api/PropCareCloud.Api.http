@@ -9,3 +9,8 @@ GET {{PropCareCloud.Api_HostAddress}}/api/system-info
 Accept: application/json
 
 ###
+
+GET {{PropCareCloud.Api_HostAddress}}/api/domain-summary
+Accept: application/json
+
+###

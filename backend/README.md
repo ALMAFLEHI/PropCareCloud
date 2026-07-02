@@ -9,6 +9,8 @@ PropCareCloud.Api is the ASP.NET Core Web API backend foundation for PropCare Cl
 - Controllers
 - Swagger/OpenAPI in Development
 - xUnit test project
+- Entity Framework Core 8
+- Npgsql Entity Framework Core PostgreSQL provider
 
 ## Restore
 
@@ -38,7 +40,30 @@ dotnet test .\backend\PropCareCloud.sln
 
 - `GET /api/health`
 - `GET /api/system-info`
+- `GET /api/domain-summary`
+
+## Sprint 4 Database Domain Foundation
+
+Sprint 4 adds the backend domain model and EF Core database foundation.
+
+Domain entities added:
+
+- `UserProfile`
+- `Property`
+- `RentalUnit`
+- `MaintenanceRequest`
+- `MaintenanceRequestComment`
+- `MaintenanceRequestAttachment`
+
+EF Core additions:
+
+- `AppDbContext`
+- Fluent API table and relationship configuration
+- Enum-to-string storage configuration
+- Planned database provider: Amazon RDS PostgreSQL
+
+The application only registers `AppDbContext` when a `DefaultConnection` connection string exists. The current `appsettings.json` contains an empty placeholder only.
 
 ## Notes
 
-Database access, authentication, authorization rules, and AWS deployment will be added in later sprints. No production secrets, AWS credentials, or database connection strings are configured in this sprint.
+Real RDS connectivity, migrations, authentication, authorization rules, and AWS deployment will be added in later sprints. No production secrets, AWS credentials, or real database connection strings are configured in this sprint.
