@@ -51,3 +51,20 @@ The project will be developed iteratively. Sprint 1 prepares the workspace, fold
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
 ```
+
+## Sprint 3 Frontend Foundation
+
+- Frontend path: `frontend/`
+- Main stack: React, TypeScript, Vite, Tailwind CSS
+- Validation command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
+```
+
+- Local run command:
+
+```powershell
+cd frontend
+npm run dev
+```
