@@ -94,12 +94,15 @@ The optional update script requires `PROPCLOUD_CONNECTION_STRING` to be set and 
 
 ## Sprint 6 Local PostgreSQL and Seed Data Foundation
 
-Sprint 6 adds safe local PostgreSQL readiness checks and demo seed data support.
+Sprint 6 adds safe local PostgreSQL readiness checks and demo seed data support. Local PostgreSQL validation has been completed with PostgreSQL 16.14.
 
 - Database readiness endpoint added: `GET /api/database/readiness`.
 - Local demo seed endpoint added: `POST /api/seed/demo-data`.
 - Seed data creates sample owners, managers, tenants, maintenance staff, properties, units, requests, comments, and fake future S3-style attachment metadata.
 - The seed endpoint returns a safe `400 Bad Request` if no database connection is configured.
+- Local database `propcarecloud_db` was created and the `InitialCreate` migration was applied.
+- The readiness endpoint returned `canConnect: true` with zero pending migrations.
+- The seed endpoint returned HTTP 200 and repeat execution skipped duplicates successfully.
 - No real credentials are stored in committed configuration files.
 
 Local setup and validation scripts:

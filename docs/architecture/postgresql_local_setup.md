@@ -10,12 +10,13 @@ This document explains the safe local PostgreSQL setup direction for PropCare Cl
 
 ## PostgreSQL Installation
 
-PostgreSQL and `psql` may be installed later if direct local database testing is needed. The current project can still build and test without PostgreSQL installed.
+PostgreSQL 16.14 is installed for local database testing. The current project can still build and test without PostgreSQL, but Sprint 6 local migration and seed validation have now been completed with the local database.
 
 Sprint 6 environment check result:
 
-- `psql`: missing or not available on PATH.
-- Actual local database update and seed endpoint execution are deferred until PostgreSQL is installed and configured.
+- `psql`: PostgreSQL 16.14 installed.
+- Local database update completed against `propcarecloud_db`.
+- Demo seed endpoint executed successfully and repeat execution skipped duplicates.
 
 ## Local Setup Checklist
 
@@ -30,7 +31,7 @@ Sprint 6 environment check result:
 
 ## Manual Database Creation
 
-After PostgreSQL is installed, create the database manually using a local admin tool or `psql`.
+The Sprint 6 local database was created as `propcarecloud_db`. For a fresh workstation, create the database manually using a local admin tool or `psql`.
 
 ```sql
 CREATE DATABASE propcarecloud_db;
