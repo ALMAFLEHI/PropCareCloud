@@ -186,10 +186,17 @@ Production build output:
 - No full maintenance request CRUD was implemented.
 - No real `.env` file or secrets were created.
 
-## Evidence Screenshots Needed Later
+## Manual UI Validation
 
-- `sprint_03_frontend_dashboard.png`
-- `sprint_03_frontend_api_connected.png`
+- Frontend opened at `http://localhost:5173`.
+- Backend opened at `http://localhost:5015`.
+- Dashboard loaded successfully.
+- Sidebar navigation tested successfully.
+- Routes tested: `/`, `/requests`, `/properties`, `/users`.
+- Backend API status card showed Connected.
+- Important screenshots saved:
+  - `docs/sprints/screenshots/sprint_03_frontend_dashboard.png`
+  - `docs/sprints/screenshots/sprint_03_frontend_api_connected.png`
 
 ## Final Status
 
