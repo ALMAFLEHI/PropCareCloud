@@ -95,3 +95,18 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-database-migration.ps1
 ```
 
 Real database credentials, RDS connectivity, and cloud deployment are still deferred to later sprints.
+
+## Sprint 6 Local PostgreSQL Readiness and Seed Data
+
+- Local PostgreSQL readiness foundation added.
+- Database readiness endpoint: `GET /api/database/readiness`
+- Local demo seed endpoint: `POST /api/seed/demo-data`
+- Seed data foundation covers sample users, properties, units, maintenance requests, comments, and fake future S3-style attachment metadata.
+- Local credentials must use user-secrets or environment variables; no real secrets are committed.
+- Validation command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-seed-data.ps1
+```
+
+Amazon RDS connectivity, authentication, full CRUD screens, and AWS deployment remain deferred to later sprints.

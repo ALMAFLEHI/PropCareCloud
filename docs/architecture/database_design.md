@@ -69,3 +69,28 @@ Property
 - Amazon RDS connection deferred to a later cloud sprint.
 
 Sprint 5 prepares the schema migration foundation without requiring PostgreSQL to be installed and without storing any real database credentials.
+
+## Sprint 6 Local Seed Data Foundation
+
+Sprint 6 adds a local demo seed data workflow for testing the database model before Amazon RDS is introduced.
+
+Demo seed data includes:
+
+- 1 admin/owner user profile
+- 1 property manager user profile
+- 2 tenant user profiles
+- 2 maintenance staff user profiles
+- 2 properties
+- 4 rental units
+- 4 maintenance requests
+- request comments
+- attachment metadata using fake future S3-style storage keys
+
+The seed workflow is intentionally local-development focused. It checks existing `UserProfile` records first and skips duplicate seeding when data already exists.
+
+New Sprint 6 endpoints:
+
+- `GET /api/database/readiness`
+- `POST /api/seed/demo-data`
+
+Amazon RDS connectivity remains deferred. The readiness endpoint and seed endpoint do not expose connection strings, passwords, usernames, or host values.

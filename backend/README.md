@@ -42,6 +42,8 @@ dotnet test .\backend\PropCareCloud.sln
 - `GET /api/system-info`
 - `GET /api/domain-summary`
 - `GET /api/database/status`
+- `GET /api/database/readiness`
+- `POST /api/seed/demo-data`
 
 ## Sprint 4 Database Domain Foundation
 
@@ -89,6 +91,26 @@ powershell -ExecutionPolicy Bypass -File .\scripts\update-local-database.ps1
 ```
 
 The optional update script requires `PROPCLOUD_CONNECTION_STRING` to be set and does not print the connection string.
+
+## Sprint 6 Local PostgreSQL and Seed Data Foundation
+
+Sprint 6 adds safe local PostgreSQL readiness checks and demo seed data support.
+
+- Database readiness endpoint added: `GET /api/database/readiness`.
+- Local demo seed endpoint added: `POST /api/seed/demo-data`.
+- Seed data creates sample owners, managers, tenants, maintenance staff, properties, units, requests, comments, and fake future S3-style attachment metadata.
+- The seed endpoint returns a safe `400 Bad Request` if no database connection is configured.
+- No real credentials are stored in committed configuration files.
+
+Local setup and validation scripts:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-local-postgresql.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\update-local-database.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-seed-data.ps1
+```
+
+Use user-secrets or environment variables for local database credentials. Do not commit real connection strings or passwords.
 
 ## Notes
 

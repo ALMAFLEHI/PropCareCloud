@@ -6,14 +6,16 @@ var builder = WebApplication.CreateBuilder(args);
 
 const string frontendDevelopmentPolicy = "FrontendDevelopment";
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var isDatabaseConfigured = !string.IsNullOrWhiteSpace(connectionString);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-if (!string.IsNullOrWhiteSpace(connectionString))
+if (isDatabaseConfigured)
 {
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(connectionString));
+    builder.Services.AddScoped<ISeedDataService, SeedDataService>();
 }
 builder.Services.AddCors(options =>
 {
@@ -28,6 +30,7 @@ builder.Services.AddCors(options =>
 builder.Services.AddSingleton<IApplicationInfoService, ApplicationInfoService>();
 builder.Services.AddSingleton<IDomainSummaryService, DomainSummaryService>();
 builder.Services.AddSingleton<IDatabaseStatusService, DatabaseStatusService>();
+builder.Services.AddScoped<IDatabaseReadinessService, DatabaseReadinessService>();
 
 var app = builder.Build();
 

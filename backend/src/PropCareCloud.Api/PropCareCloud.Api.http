@@ -19,3 +19,13 @@ GET {{PropCareCloud.Api_HostAddress}}/api/database/status
 Accept: application/json
 
 ###
+
+GET {{PropCareCloud.Api_HostAddress}}/api/database/readiness
+Accept: application/json
+
+###
+
+POST {{PropCareCloud.Api_HostAddress}}/api/seed/demo-data
+Accept: application/json
+
+###
