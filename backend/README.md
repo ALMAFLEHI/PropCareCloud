@@ -115,6 +115,49 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-seed-data.ps1
 
 Use user-secrets or environment variables for local database credentials. Do not commit real connection strings or passwords.
 
+## Sprint 7 Backend CRUD APIs
+
+Sprint 7 adds database-backed CRUD APIs for property/unit management and maintenance request workflows.
+
+Property endpoints:
+
+- `GET /api/properties`
+- `GET /api/properties/{id}`
+- `POST /api/properties`
+- `PUT /api/properties/{id}`
+- `DELETE /api/properties/{id}`
+
+Rental unit endpoints:
+
+- `GET /api/properties/{propertyId}/units`
+- `GET /api/properties/{propertyId}/units/{unitId}`
+- `POST /api/properties/{propertyId}/units`
+- `PUT /api/properties/{propertyId}/units/{unitId}`
+- `DELETE /api/properties/{propertyId}/units/{unitId}`
+
+Maintenance request endpoints:
+
+- `GET /api/maintenance-requests`
+- `GET /api/maintenance-requests/{id}`
+- `POST /api/maintenance-requests`
+- `PUT /api/maintenance-requests/{id}`
+- `PATCH /api/maintenance-requests/{id}/assign`
+- `PATCH /api/maintenance-requests/{id}/status`
+- `DELETE /api/maintenance-requests/{id}`
+
+Comment endpoints:
+
+- `GET /api/maintenance-requests/{id}/comments`
+- `POST /api/maintenance-requests/{id}/comments`
+
+Validation command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-crud-api.ps1
+```
+
+Authentication and authorization enforcement are still planned for a later sprint.
+
 ## Notes
 
 Real RDS connectivity, migrations, authentication, authorization rules, and AWS deployment will be added in later sprints. No production secrets, AWS credentials, or real database connection strings are configured in this sprint.

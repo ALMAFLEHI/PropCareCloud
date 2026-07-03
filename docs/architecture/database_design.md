@@ -94,3 +94,24 @@ New Sprint 6 endpoints:
 - `POST /api/seed/demo-data`
 
 Amazon RDS connectivity remains deferred. The readiness endpoint and seed endpoint do not expose connection strings, passwords, usernames, or host values.
+
+## Sprint 7 CRUD API Layer
+
+Sprint 7 connects the domain model to real database-backed API workflows for Task 1 system implementation.
+
+Property and unit workflow:
+
+- Properties can be listed, created, viewed, updated, and deleted.
+- Rental units can be managed under a property.
+- Property deletion is blocked when rental units exist.
+- Rental unit deletion is blocked when maintenance requests exist.
+
+Maintenance request workflow:
+
+- Tenant maintenance requests can be listed, filtered, created, viewed, updated, assigned, and moved through statuses.
+- Request assignment validates that the assigned profile has the `MaintenanceStaff` role.
+- Request creation validates that the requesting profile has the `Tenant` role.
+- Completing a request records `CompletedAtUtc`.
+- Comments can be added and listed for each request.
+
+This CRUD API layer proves that the system is now using the EF Core database model for real backend workflows, while authentication, authorization enforcement, frontend CRUD screens, Amazon RDS, and cloud deployment remain planned for later sprints.

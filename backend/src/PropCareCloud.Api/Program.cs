@@ -16,6 +16,8 @@ if (isDatabaseConfigured)
     builder.Services.AddDbContext<AppDbContext>(options =>
         options.UseNpgsql(connectionString));
     builder.Services.AddScoped<ISeedDataService, SeedDataService>();
+    builder.Services.AddScoped<IPropertyService, PropertyService>();
+    builder.Services.AddScoped<IMaintenanceRequestService, MaintenanceRequestService>();
 }
 builder.Services.AddCors(options =>
 {

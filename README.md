@@ -113,3 +113,16 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-seed-data.ps1
 ```
 
 Amazon RDS connectivity, authentication, full CRUD screens, and AWS deployment remain deferred to later sprints.
+
+## Sprint 7 Backend CRUD APIs
+
+- Backend CRUD APIs added for Task 1 system implementation.
+- Supports property and rental unit management.
+- Supports tenant maintenance request workflow, staff assignment, status updates, and comments.
+- Validation command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-crud-api.ps1
+```
+
+Authentication, authorization enforcement, frontend CRUD integration, Amazon RDS, and AWS deployment remain deferred to later sprints.

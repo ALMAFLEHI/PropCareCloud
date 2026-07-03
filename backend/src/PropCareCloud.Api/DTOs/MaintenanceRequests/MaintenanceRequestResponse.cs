@@ -1,0 +1,22 @@
+using PropCareCloud.Api.Domain.Enums;
+
+namespace PropCareCloud.Api.DTOs.MaintenanceRequests;
+
+public sealed record MaintenanceRequestResponse(
+    Guid Id,
+    Guid RentalUnitId,
+    string UnitNumber,
+    Guid TenantProfileId,
+    string TenantName,
+    Guid? AssignedStaffProfileId,
+    string? AssignedStaffName,
+    string Title,
+    string Description,
+    MaintenanceCategory Category,
+    MaintenancePriority Priority,
+    MaintenanceStatus Status,
+    DateTime CreatedAtUtc,
+    DateTime? UpdatedAtUtc,
+    DateTime? CompletedAtUtc,
+    int CommentCount,
+    int AttachmentCount);

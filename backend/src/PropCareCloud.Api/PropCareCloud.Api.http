@@ -29,3 +29,13 @@ POST {{PropCareCloud.Api_HostAddress}}/api/seed/demo-data
 Accept: application/json
 
 ###
+
+GET {{PropCareCloud.Api_HostAddress}}/api/properties
+Accept: application/json
+
+###
+
+GET {{PropCareCloud.Api_HostAddress}}/api/maintenance-requests
+Accept: application/json
+
+###
