@@ -165,16 +165,20 @@ http://localhost:5015/swagger
 - Confirm `GET /api/maintenance-requests` returns HTTP 200 and seeded maintenance requests.
 - Optionally create one test property using `POST /api/properties`.
 
-Manual API check result:
+## Manual API Validation
 
-- Swagger document returned HTTP 200.
+- Backend opened at `http://localhost:5015`.
+- Swagger opened at `http://localhost:5015/swagger`.
 - Swagger includes `/api/properties`.
 - Swagger includes `/api/maintenance-requests`.
 - `GET /api/properties` returned HTTP 200.
-- `GET /api/properties` returned 2 seeded properties.
+- `GET /api/properties` returned seeded property records.
 - `GET /api/maintenance-requests` returned HTTP 200.
-- `GET /api/maintenance-requests` returned 4 seeded maintenance requests.
+- `GET /api/maintenance-requests` returned seeded maintenance request records.
 - No extra test property was created, keeping evidence/data minimal.
+- Evidence screenshots saved:
+  - `docs/sprints/screenshots/sprint_07_properties_api_swagger.png`
+  - `docs/sprints/screenshots/sprint_07_maintenance_requests_api_swagger.png`
 
 ## Issues Found
 
@@ -190,10 +194,10 @@ Manual API check result:
 - No Amazon RDS connection was configured.
 - No AWS deployment was performed.
 
-## Evidence Screenshots Needed Later
+## Evidence Screenshots
 
-- `sprint_07_properties_api_swagger.png`
-- `sprint_07_maintenance_requests_api_swagger.png`
+- `docs/sprints/screenshots/sprint_07_properties_api_swagger.png`
+- `docs/sprints/screenshots/sprint_07_maintenance_requests_api_swagger.png`
 
 ## Final Status
 
