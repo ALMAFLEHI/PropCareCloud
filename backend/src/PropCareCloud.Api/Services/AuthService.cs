@@ -34,6 +34,7 @@ public sealed class AuthService(
             Role: UserRole.AdminOwner,
             FullName: "Amina Owner",
             SeedEmail: "admin.owner@example.com",
+            PreferredUnitNumber: null,
             Purpose: "Full portfolio, property, request, and user oversight demo account."),
         new(
             RoleLabel: "Property Manager",
@@ -42,15 +43,26 @@ public sealed class AuthService(
             Role: UserRole.PropertyManager,
             FullName: "Daniel Property Manager",
             SeedEmail: "manager1@example.com",
+            PreferredUnitNumber: null,
             Purpose: "Property and maintenance workflow management demo account."),
         new(
-            RoleLabel: "Tenant",
+            RoleLabel: "Tenant - Sara",
             Email: "tenant@propcare.demo",
             Password: "PropCare@Tenant123",
             Role: UserRole.Tenant,
             FullName: "Sara Tenant",
             SeedEmail: "tenant1@example.com",
-            Purpose: "Tenant request submission and tracking demo account."),
+            PreferredUnitNumber: "B-1102",
+            Purpose: "Primary tenant demo account for assigned-unit request isolation."),
+        new(
+            RoleLabel: "Tenant - Imran",
+            Email: "imran@propcare.demo",
+            Password: "PropCare@Imran123",
+            Role: UserRole.Tenant,
+            FullName: "Imran Tenant",
+            SeedEmail: "tenant2@example.com",
+            PreferredUnitNumber: "A-0205",
+            Purpose: "Secondary tenant isolation demo account with separate unit and request data."),
         new(
             RoleLabel: "Maintenance Staff",
             Email: "staff@propcare.demo",
@@ -58,6 +70,7 @@ public sealed class AuthService(
             Role: UserRole.MaintenanceStaff,
             FullName: "Nadia Maintenance Staff",
             SeedEmail: "staff1@example.com",
+            PreferredUnitNumber: null,
             Purpose: "Maintenance work queue and status update demo account.")
     ];
 
@@ -143,7 +156,7 @@ public sealed class AuthService(
 
             if (demoAccount.Role == UserRole.Tenant)
             {
-                await EnsureTenantUnitAssignmentAsync(userProfile);
+                await EnsureTenantUnitAssignmentAsync(userProfile, demoAccount.PreferredUnitNumber);
             }
         }
 
@@ -179,7 +192,9 @@ public sealed class AuthService(
         return userProfile;
     }
 
-    private async Task EnsureTenantUnitAssignmentAsync(UserProfile tenantProfile)
+    private async Task EnsureTenantUnitAssignmentAsync(
+        UserProfile tenantProfile,
+        string? preferredUnitNumber)
     {
         var hasActiveAssignment = await dbContext.TenantUnitAssignments
             .AnyAsync(assignment =>
@@ -193,7 +208,11 @@ public sealed class AuthService(
 
         var assignedUnit = await dbContext.RentalUnits
             .Where(unit => unit.Status == UnitStatus.Occupied)
-            .OrderBy(unit => unit.UnitNumber == "B-1102" ? 0 : 1)
+            .Where(unit => !dbContext.TenantUnitAssignments.Any(assignment =>
+                assignment.RentalUnitId == unit.Id &&
+                assignment.IsActive &&
+                assignment.LeaseEndDateUtc == null))
+            .OrderBy(unit => preferredUnitNumber != null && unit.UnitNumber == preferredUnitNumber ? 0 : 1)
             .ThenBy(unit => unit.UnitNumber)
             .FirstOrDefaultAsync();
         if (assignedUnit is null)
@@ -287,5 +306,6 @@ public sealed class AuthService(
         UserRole Role,
         string FullName,
         string SeedEmail,
+        string? PreferredUnitNumber,
         string Purpose);
 }

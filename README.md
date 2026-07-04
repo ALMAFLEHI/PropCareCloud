@@ -156,7 +156,8 @@ Demo credentials:
 | --- | --- | --- |
 | Admin / Owner | `admin@propcare.demo` | `PropCare@Admin123` |
 | Property Manager | `manager@propcare.demo` | `PropCare@Manager123` |
-| Tenant | `tenant@propcare.demo` | `PropCare@Tenant123` |
+| Tenant - Sara | `tenant@propcare.demo` | `PropCare@Tenant123` |
+| Tenant - Imran | `imran@propcare.demo` | `PropCare@Imran123` |
 | Maintenance Staff | `staff@propcare.demo` | `PropCare@Staff123` |
 
 Validation command:
@@ -189,3 +190,18 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
 ```
 
 AWS Cognito, production invitations, Amazon RDS cloud connectivity, and cloud deployment remain deferred to later sprints.
+
+## Sprint 9.2 Tenant Unit Account Isolation
+
+- Multi-tenant account/unit logic validated for real SaaS-style tenant isolation.
+- Sara Tenant and Imran Tenant are separate demo tenant login accounts with separate `UserProfile` records.
+- The tenant isolation logic applies to all future tenants through authenticated `userProfileId` values and tenant-unit assignments.
+- One tenant can have multiple active assigned units.
+- One rental unit can have only one active tenant assignment at a time.
+- Tenants see only their own maintenance requests.
+- Tenants create maintenance requests only for their own active assigned units.
+- Admin / Owner and Property Manager can still see/manage portfolio-level request data.
+- Maintenance Staff still see only assigned jobs.
+- Sprint 9.2 migration: `HardenTenantUnitAssignmentIndexes`.
+
+Manual evidence screenshots are needed before final Sprint 9 evidence closure.

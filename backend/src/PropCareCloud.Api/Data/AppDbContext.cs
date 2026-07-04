@@ -188,6 +188,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(account => account.LastLoginAtUtc);
 
             entity.HasIndex(account => account.Email).IsUnique();
+            entity.HasIndex(account => account.UserProfileId).IsUnique();
 
             entity.HasOne(account => account.UserProfile)
                 .WithOne(user => user.AuthUserAccount)
@@ -212,12 +213,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
 
             entity.HasIndex(assignment => assignment.TenantProfileId);
             entity.HasIndex(assignment => assignment.RentalUnitId);
-            entity.HasIndex(assignment => new
-            {
-                assignment.TenantProfileId,
-                assignment.RentalUnitId,
-                assignment.IsActive
-            }).IsUnique();
+            entity.HasIndex(assignment => assignment.RentalUnitId)
+                .IsUnique()
+                .HasFilter("\"IsActive\" = TRUE AND \"LeaseEndDateUtc\" IS NULL");
 
             entity.HasOne(assignment => assignment.TenantProfile)
                 .WithMany(user => user.TenantUnitAssignments)

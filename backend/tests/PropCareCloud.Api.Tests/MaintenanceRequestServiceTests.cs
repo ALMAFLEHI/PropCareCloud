@@ -190,6 +190,42 @@ public sealed class MaintenanceRequestServiceTests
     }
 
     [Fact]
+    public async Task GetRequestsAsync_IsolatesSaraAndImranTenantRequests()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedTwoTenantGraphAsync(dbContext);
+        var saraService = CreateService(dbContext, seed.SaraTenant.Id, UserRole.Tenant);
+        var imranService = CreateService(dbContext, seed.ImranTenant.Id, UserRole.Tenant);
+
+        var saraRequests = await saraService.GetRequestsAsync();
+        var imranRequests = await imranService.GetRequestsAsync();
+
+        Assert.Single(saraRequests);
+        Assert.Single(imranRequests);
+        Assert.Equal(seed.SaraRequest.Id, saraRequests[0].Id);
+        Assert.Equal(seed.ImranRequest.Id, imranRequests[0].Id);
+        Assert.DoesNotContain(saraRequests, request => request.TenantProfileId == seed.ImranTenant.Id);
+        Assert.DoesNotContain(imranRequests, request => request.TenantProfileId == seed.SaraTenant.Id);
+    }
+
+    [Fact]
+    public async Task GetRequestByIdAsync_BlocksCrossTenantRequestAccess()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedTwoTenantGraphAsync(dbContext);
+        var saraService = CreateService(dbContext, seed.SaraTenant.Id, UserRole.Tenant);
+        var imranService = CreateService(dbContext, seed.ImranTenant.Id, UserRole.Tenant);
+
+        var saraViewingImran = await saraService.GetRequestByIdAsync(seed.ImranRequest.Id);
+        var imranViewingSara = await imranService.GetRequestByIdAsync(seed.SaraRequest.Id);
+
+        Assert.Null(saraViewingImran);
+        Assert.Null(imranViewingSara);
+    }
+
+    [Fact]
     public async Task GetRequestsAsync_MaintenanceStaffSeesOnlyAssignedRequests()
     {
         var options = CreateOptions();
@@ -291,6 +327,61 @@ public sealed class MaintenanceRequestServiceTests
         });
 
         Assert.Null(created);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_TenantsCannotCreateForEachOthersUnits()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedTwoTenantGraphAsync(dbContext);
+        var saraService = CreateService(dbContext, seed.SaraTenant.Id, UserRole.Tenant);
+        var imranService = CreateService(dbContext, seed.ImranTenant.Id, UserRole.Tenant);
+
+        var saraUsingImranUnit = await saraService.CreateRequestAsync(new MaintenanceRequestCreateRequest
+        {
+            RentalUnitId = seed.ImranUnit.Id,
+            TenantProfileId = seed.ImranTenant.Id,
+            Title = "Wrong unit attempt",
+            Description = "Sara should not create a request for Imran's unit.",
+            Category = MaintenanceCategory.Other,
+            Priority = MaintenancePriority.Low
+        });
+        var imranUsingSaraUnit = await imranService.CreateRequestAsync(new MaintenanceRequestCreateRequest
+        {
+            RentalUnitId = seed.SaraUnit.Id,
+            TenantProfileId = seed.SaraTenant.Id,
+            Title = "Wrong unit attempt",
+            Description = "Imran should not create a request for Sara's unit.",
+            Category = MaintenanceCategory.Other,
+            Priority = MaintenancePriority.Low
+        });
+
+        Assert.Null(saraUsingImranUnit);
+        Assert.Null(imranUsingSaraUnit);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_TenantCanCreateForOwnAssignedUnit()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedTwoTenantGraphAsync(dbContext);
+        var imranService = CreateService(dbContext, seed.ImranTenant.Id, UserRole.Tenant);
+
+        var created = await imranService.CreateRequestAsync(new MaintenanceRequestCreateRequest
+        {
+            RentalUnitId = seed.ImranUnit.Id,
+            TenantProfileId = seed.SaraTenant.Id,
+            Title = "Bedroom light repair",
+            Description = "The backend should use Imran's authenticated tenant profile.",
+            Category = MaintenanceCategory.Electrical,
+            Priority = MaintenancePriority.Medium
+        });
+
+        Assert.NotNull(created);
+        Assert.Equal(seed.ImranTenant.Id, created.TenantProfileId);
+        Assert.Equal(seed.ImranUnit.Id, created.RentalUnitId);
     }
 
     [Fact]
@@ -447,6 +538,119 @@ public sealed class MaintenanceRequestServiceTests
         return new MaintenanceSeed(property, unit, tenant, manager, staff, request);
     }
 
+    private static async Task<TwoTenantSeed> SeedTwoTenantGraphAsync(AppDbContext dbContext)
+    {
+        var property = new Property
+        {
+            Name = "Tenant Isolation Residence",
+            AddressLine1 = "45 Privacy Lane",
+            City = "Kuala Lumpur",
+            Country = "Malaysia",
+            Status = PropertyStatus.Active
+        };
+        var saraUnit = new RentalUnit
+        {
+            PropertyId = property.Id,
+            Property = property,
+            UnitNumber = "B-1102",
+            Floor = "11",
+            Bedrooms = 1,
+            Status = UnitStatus.Occupied
+        };
+        var imranUnit = new RentalUnit
+        {
+            PropertyId = property.Id,
+            Property = property,
+            UnitNumber = "A-0205",
+            Floor = "2",
+            Bedrooms = 3,
+            Status = UnitStatus.Occupied
+        };
+        var saraTenant = new UserProfile
+        {
+            FullName = "Sara Tenant",
+            Email = "tenant1@example.com",
+            Role = UserRole.Tenant
+        };
+        var imranTenant = new UserProfile
+        {
+            FullName = "Imran Tenant",
+            Email = "tenant2@example.com",
+            Role = UserRole.Tenant
+        };
+        var manager = new UserProfile
+        {
+            FullName = "Manager User",
+            Email = "manager.isolation@example.com",
+            Role = UserRole.PropertyManager
+        };
+        var staff = new UserProfile
+        {
+            FullName = "Nadia Maintenance Staff",
+            Email = "staff1@example.com",
+            Role = UserRole.MaintenanceStaff
+        };
+        var saraRequest = new MaintenanceRequest
+        {
+            RentalUnitId = saraUnit.Id,
+            RentalUnit = saraUnit,
+            TenantProfileId = saraTenant.Id,
+            TenantProfile = saraTenant,
+            AssignedStaffProfileId = staff.Id,
+            AssignedStaffProfile = staff,
+            Title = "Sara kitchen sink",
+            Description = "Sara's private maintenance request.",
+            Category = MaintenanceCategory.Plumbing,
+            Priority = MaintenancePriority.High,
+            Status = MaintenanceStatus.Assigned
+        };
+        var imranRequest = new MaintenanceRequest
+        {
+            RentalUnitId = imranUnit.Id,
+            RentalUnit = imranUnit,
+            TenantProfileId = imranTenant.Id,
+            TenantProfile = imranTenant,
+            Title = "Imran AC service",
+            Description = "Imran's private maintenance request.",
+            Category = MaintenanceCategory.HVAC,
+            Priority = MaintenancePriority.Medium,
+            Status = MaintenanceStatus.UnderReview
+        };
+
+        dbContext.Properties.Add(property);
+        dbContext.RentalUnits.AddRange(saraUnit, imranUnit);
+        dbContext.UserProfiles.AddRange(saraTenant, imranTenant, manager, staff);
+        dbContext.TenantUnitAssignments.AddRange(
+            new TenantUnitAssignment
+            {
+                TenantProfileId = saraTenant.Id,
+                TenantProfile = saraTenant,
+                RentalUnitId = saraUnit.Id,
+                RentalUnit = saraUnit,
+                IsActive = true
+            },
+            new TenantUnitAssignment
+            {
+                TenantProfileId = imranTenant.Id,
+                TenantProfile = imranTenant,
+                RentalUnitId = imranUnit.Id,
+                RentalUnit = imranUnit,
+                IsActive = true
+            });
+        dbContext.MaintenanceRequests.AddRange(saraRequest, imranRequest);
+        await dbContext.SaveChangesAsync();
+
+        return new TwoTenantSeed(
+            saraTenant,
+            imranTenant,
+            manager,
+            staff,
+            saraUnit,
+            imranUnit,
+            saraRequest,
+            imranRequest);
+    }
+
     private sealed record MaintenanceSeed(
         Property Property,
         RentalUnit Unit,
@@ -454,6 +658,16 @@ public sealed class MaintenanceRequestServiceTests
         UserProfile Manager,
         UserProfile Staff,
         MaintenanceRequest? Request);
+
+    private sealed record TwoTenantSeed(
+        UserProfile SaraTenant,
+        UserProfile ImranTenant,
+        UserProfile Manager,
+        UserProfile Staff,
+        RentalUnit SaraUnit,
+        RentalUnit ImranUnit,
+        MaintenanceRequest SaraRequest,
+        MaintenanceRequest ImranRequest);
 
     private sealed class FakeCurrentUserService(Guid userProfileId, UserRole role) : ICurrentUserService
     {

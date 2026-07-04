@@ -184,7 +184,8 @@ Demo credentials:
 | --- | --- | --- |
 | Admin / Owner | `admin@propcare.demo` | `PropCare@Admin123` |
 | Property Manager | `manager@propcare.demo` | `PropCare@Manager123` |
-| Tenant | `tenant@propcare.demo` | `PropCare@Tenant123` |
+| Tenant - Sara | `tenant@propcare.demo` | `PropCare@Tenant123` |
+| Tenant - Imran | `imran@propcare.demo` | `PropCare@Imran123` |
 | Maintenance Staff | `staff@propcare.demo` | `PropCare@Staff123` |
 
 The demo credentials are public assignment/testing accounts. Passwords are stored in the database as BCrypt hashes only. `Jwt:SigningKey` remains empty in committed configuration and uses a local development fallback for the assignment demo only.
@@ -214,6 +215,31 @@ Role-aware helper endpoints:
 - `GET /api/user-profiles/me/assigned-units` - Tenant only.
 
 No password hashes, real database passwords, AWS keys, or production JWT secrets are exposed by these endpoints.
+
+## Sprint 9.2 Tenant Unit Isolation
+
+Sprint 9.2 validates tenant/unit/account isolation for multiple tenant accounts.
+
+Tenant account rules:
+
+- Every tenant login account has a unique email.
+- Every account maps to exactly one `UserProfile`.
+- `AuthUserAccount.UserProfileId` is unique.
+- Sara Tenant and Imran Tenant are separate demo accounts and separate tenant profiles.
+
+Tenant assignment rules:
+
+- One tenant can have multiple active assigned rental units.
+- A rental unit can have only one active assignment where `IsActive` is true and `LeaseEndDateUtc` is null.
+- Inactive historical assignments remain allowed.
+- Migration `HardenTenantUnitAssignmentIndexes` adds the PostgreSQL filtered unique index for active rental-unit assignments.
+
+Tenant request rules:
+
+- Tenant request listing is filtered by the authenticated tenant profile.
+- Tenant create request uses the authenticated tenant profile and ignores submitted `tenantProfileId`.
+- Tenant create request is limited to active assigned units.
+- Tenant status updates remain forbidden.
 
 ## Notes
 

@@ -164,3 +164,7 @@ COMPLETE for Sprint 9.1 code and automated validation.
 - `check-frontend`: PASS
 
 Manual role screenshots are still needed before final Sprint 9 evidence closure.
+
+## Sprint 9.2 Follow-Up
+
+Sprint 9.2 further validates tenant-unit isolation and multiple tenant account behavior. It adds a second tenant demo account, hardens active rental-unit assignment uniqueness, and proves Sara/Imran request visibility remains isolated through the same generic tenant rules.

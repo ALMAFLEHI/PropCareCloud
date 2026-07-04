@@ -19,10 +19,16 @@ const fallbackCredentials: DemoCredentialResponse[] = [
     purpose: 'Property and maintenance workflow demo account.',
   },
   {
-    role: 'Tenant',
+    role: 'Tenant - Sara',
     email: 'tenant@propcare.demo',
     password: 'PropCare@Tenant123',
-    purpose: 'Tenant request tracking demo account.',
+    purpose: 'Primary tenant demo account for assigned-unit request isolation.',
+  },
+  {
+    role: 'Tenant - Imran',
+    email: 'imran@propcare.demo',
+    password: 'PropCare@Imran123',
+    purpose: 'Secondary tenant isolation demo account with separate unit and request data.',
   },
   {
     role: 'Maintenance Staff',
@@ -171,7 +177,7 @@ function LoginPage() {
                 Assignment Demo Credentials
               </p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-                Four role-based demo accounts
+                Five role-based demo accounts
               </h2>
             </div>
             <div className="flex size-11 items-center justify-center rounded-md bg-emerald-50 text-emerald-700">

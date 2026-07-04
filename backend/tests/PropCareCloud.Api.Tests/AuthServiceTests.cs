@@ -11,7 +11,7 @@ namespace PropCareCloud.Api.Tests;
 public sealed class AuthServiceTests
 {
     [Fact]
-    public async Task EnsureDemoAccountsAsync_CreatesFourHashedDemoAccounts()
+    public async Task EnsureDemoAccountsAsync_CreatesFiveHashedDemoAccounts()
     {
         var options = CreateOptions();
         await using var dbContext = new AppDbContext(options);
@@ -23,7 +23,7 @@ public sealed class AuthServiceTests
             .Include(account => account.UserProfile)
             .ToListAsync();
 
-        Assert.Equal(4, accounts.Count);
+        Assert.Equal(5, accounts.Count);
         Assert.All(accounts, account =>
         {
             Assert.NotNull(account.UserProfile);
@@ -31,6 +31,7 @@ public sealed class AuthServiceTests
             Assert.StartsWith("$2", account.PasswordHash);
             Assert.DoesNotContain("PropCare@", account.PasswordHash);
         });
+        Assert.Equal(5, accounts.Select(account => account.UserProfileId).Distinct().Count());
     }
 
     [Fact]
@@ -43,31 +44,68 @@ public sealed class AuthServiceTests
         await service.EnsureDemoAccountsAsync();
         await service.EnsureDemoAccountsAsync();
 
-        Assert.Equal(4, await dbContext.AuthUserAccounts.CountAsync());
-        Assert.Equal(4, await dbContext.UserProfiles.CountAsync());
+        Assert.Equal(5, await dbContext.AuthUserAccounts.CountAsync());
+        Assert.Equal(5, await dbContext.UserProfiles.CountAsync());
     }
 
     [Fact]
-    public async Task EnsureDemoAccountsAsync_CreatesTenantUnitAssignmentWithoutDuplicates()
+    public async Task EnsureDemoAccountsAsync_CreatesSeparateTenantAccountsAndAssignments()
     {
         var options = CreateOptions();
         await using var dbContext = new AppDbContext(options);
-        await SeedOccupiedUnitAsync(dbContext);
+        await SeedOccupiedUnitsAsync(dbContext);
         var service = new AuthService(dbContext, CreateConfiguration());
 
         await service.EnsureDemoAccountsAsync();
         await service.EnsureDemoAccountsAsync();
 
-        var tenantAccount = await dbContext.AuthUserAccounts
+        var saraAccount = await dbContext.AuthUserAccounts
             .Include(account => account.UserProfile)
             .SingleAsync(account => account.Email == "tenant@propcare.demo");
-        var assignments = await dbContext.TenantUnitAssignments
-            .Where(assignment => assignment.TenantProfileId == tenantAccount.UserProfileId)
+        var imranAccount = await dbContext.AuthUserAccounts
+            .Include(account => account.UserProfile)
+            .SingleAsync(account => account.Email == "imran@propcare.demo");
+        var saraAssignments = await dbContext.TenantUnitAssignments
+            .Include(assignment => assignment.RentalUnit)
+            .Where(assignment => assignment.TenantProfileId == saraAccount.UserProfileId)
+            .ToListAsync();
+        var imranAssignments = await dbContext.TenantUnitAssignments
+            .Include(assignment => assignment.RentalUnit)
+            .Where(assignment => assignment.TenantProfileId == imranAccount.UserProfileId)
+            .ToListAsync();
+        var activeAssignments = await dbContext.TenantUnitAssignments
+            .Where(assignment => assignment.IsActive && assignment.LeaseEndDateUtc == null)
             .ToListAsync();
 
-        Assert.Single(assignments);
-        Assert.True(assignments[0].IsActive);
-        Assert.Null(assignments[0].LeaseEndDateUtc);
+        Assert.Equal(UserRole.Tenant, saraAccount.UserProfile?.Role);
+        Assert.Equal(UserRole.Tenant, imranAccount.UserProfile?.Role);
+        Assert.NotEqual(saraAccount.UserProfileId, imranAccount.UserProfileId);
+        Assert.Single(saraAssignments);
+        Assert.Single(imranAssignments);
+        Assert.NotEqual(saraAssignments[0].RentalUnitId, imranAssignments[0].RentalUnitId);
+        Assert.Equal("B-1102", saraAssignments[0].RentalUnit?.UnitNumber);
+        Assert.Equal("A-0205", imranAssignments[0].RentalUnit?.UnitNumber);
+        Assert.Equal(activeAssignments.Count, activeAssignments.Select(assignment => assignment.RentalUnitId).Distinct().Count());
+    }
+
+    [Fact]
+    public async Task LoginAsync_SucceedsWithImranTenantCredential()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var service = new AuthService(dbContext, CreateConfiguration());
+        await service.EnsureDemoAccountsAsync();
+
+        var response = await service.LoginAsync(new LoginRequest
+        {
+            Email = "imran@propcare.demo",
+            Password = "PropCare@Imran123"
+        });
+
+        Assert.True(response.Success);
+        Assert.NotNull(response.User);
+        Assert.Equal("Imran Tenant", response.User.FullName);
+        Assert.Equal(UserRole.Tenant, response.User.Role);
     }
 
     [Fact]
@@ -117,7 +155,7 @@ public sealed class AuthServiceTests
     }
 
     [Fact]
-    public async Task GetDemoCredentialsAsync_ReturnsAllFourRoles()
+    public async Task GetDemoCredentialsAsync_ReturnsAllFiveDemoAccounts()
     {
         var options = CreateOptions();
         await using var dbContext = new AppDbContext(options);
@@ -125,11 +163,18 @@ public sealed class AuthServiceTests
 
         var credentials = await service.GetDemoCredentialsAsync();
 
-        Assert.Equal(4, credentials.Count);
+        Assert.Equal(5, credentials.Count);
         Assert.Contains(credentials, credential => credential.Email == "admin@propcare.demo");
         Assert.Contains(credentials, credential => credential.Email == "manager@propcare.demo");
         Assert.Contains(credentials, credential => credential.Email == "tenant@propcare.demo");
+        Assert.Contains(credentials, credential => credential.Email == "imran@propcare.demo");
         Assert.Contains(credentials, credential => credential.Email == "staff@propcare.demo");
+        Assert.Contains(credentials, credential =>
+            credential.Role == "Tenant - Sara" &&
+            credential.Purpose.Contains("Primary tenant demo", StringComparison.OrdinalIgnoreCase));
+        Assert.Contains(credentials, credential =>
+            credential.Role == "Tenant - Imran" &&
+            credential.Purpose.Contains("isolation", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
@@ -171,7 +216,7 @@ public sealed class AuthServiceTests
             .Build();
     }
 
-    private static async Task SeedOccupiedUnitAsync(AppDbContext dbContext)
+    private static async Task SeedOccupiedUnitsAsync(AppDbContext dbContext)
     {
         var property = new Property
         {
@@ -190,9 +235,18 @@ public sealed class AuthServiceTests
             Bedrooms = 1,
             Status = UnitStatus.Occupied
         };
+        var imranUnit = new RentalUnit
+        {
+            PropertyId = property.Id,
+            Property = property,
+            UnitNumber = "A-0205",
+            Floor = "2",
+            Bedrooms = 3,
+            Status = UnitStatus.Occupied
+        };
 
         dbContext.Properties.Add(property);
-        dbContext.RentalUnits.Add(unit);
+        dbContext.RentalUnits.AddRange(unit, imranUnit);
         await dbContext.SaveChangesAsync();
     }
 }

@@ -55,12 +55,23 @@ public sealed class MaintenanceRequestsController(
         var created = await maintenanceRequestService.CreateRequestAsync(request);
         if (created is null)
         {
-            return currentUser.IsTenant
-                ? Forbid()
-                : BadRequest(new
+            if (currentUser.IsTenant)
+            {
+                if (!await maintenanceRequestService.CurrentTenantHasActiveAssignedUnitsAsync())
                 {
-                    message = "Rental unit must exist and tenant profile must have the Tenant role."
-                });
+                    return BadRequest(new
+                    {
+                        message = "The signed-in tenant does not have an active assigned rental unit."
+                    });
+                }
+
+                return Forbid();
+            }
+
+            return BadRequest(new
+            {
+                message = "Rental unit must exist and tenant profile must have the Tenant role."
+            });
         }
 
         return CreatedAtAction(nameof(GetRequest), new { id = created.Id }, created);

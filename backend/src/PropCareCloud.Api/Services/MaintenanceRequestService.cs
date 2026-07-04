@@ -13,6 +13,7 @@ public interface IMaintenanceRequestService
         MaintenancePriority? priority = null);
     Task<MaintenanceRequestResponse?> GetRequestByIdAsync(Guid id);
     Task<bool> RequestExistsAsync(Guid id);
+    Task<bool> CurrentTenantHasActiveAssignedUnitsAsync();
     Task<MaintenanceRequestResponse?> CreateRequestAsync(MaintenanceRequestCreateRequest request);
     Task<MaintenanceRequestResponse?> UpdateRequestAsync(Guid id, MaintenanceRequestUpdateRequest request);
     Task<MaintenanceRequestResponse?> AssignRequestAsync(Guid id, MaintenanceRequestAssignRequest request);
@@ -59,6 +60,20 @@ public sealed class MaintenanceRequestService(
     public async Task<bool> RequestExistsAsync(Guid id)
     {
         return await dbContext.MaintenanceRequests.AnyAsync(request => request.Id == id);
+    }
+
+    public async Task<bool> CurrentTenantHasActiveAssignedUnitsAsync()
+    {
+        if (!currentUser.IsTenant || currentUser.UserProfileId is not { } tenantProfileId)
+        {
+            return false;
+        }
+
+        return await dbContext.TenantUnitAssignments
+            .AnyAsync(assignment =>
+                assignment.TenantProfileId == tenantProfileId &&
+                assignment.IsActive &&
+                assignment.LeaseEndDateUtc == null);
     }
 
     public async Task<MaintenanceRequestResponse?> CreateRequestAsync(MaintenanceRequestCreateRequest request)

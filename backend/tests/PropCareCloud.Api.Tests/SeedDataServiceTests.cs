@@ -39,6 +39,30 @@ public sealed class SeedDataServiceTests
             Assert.Equal(4, await dbContext.MaintenanceRequestComments.CountAsync());
             Assert.Equal(1, await dbContext.MaintenanceRequestAttachments.CountAsync());
 
+            var saraTenantId = await dbContext.UserProfiles
+                .Where(user => user.Email == "tenant1@example.com")
+                .Select(user => user.Id)
+                .SingleAsync();
+            var imranTenantId = await dbContext.UserProfiles
+                .Where(user => user.Email == "tenant2@example.com")
+                .Select(user => user.Id)
+                .SingleAsync();
+            var saraAssignments = await dbContext.TenantUnitAssignments
+                .Where(assignment => assignment.TenantProfileId == saraTenantId &&
+                                     assignment.IsActive &&
+                                     assignment.LeaseEndDateUtc == null)
+                .ToListAsync();
+            var imranAssignments = await dbContext.TenantUnitAssignments
+                .Where(assignment => assignment.TenantProfileId == imranTenantId &&
+                                     assignment.IsActive &&
+                                     assignment.LeaseEndDateUtc == null)
+                .ToListAsync();
+
+            Assert.Equal(2, saraAssignments.Count);
+            Assert.Single(imranAssignments);
+            Assert.Empty(saraAssignments.Select(assignment => assignment.RentalUnitId)
+                .Intersect(imranAssignments.Select(assignment => assignment.RentalUnitId)));
+
             var attachment = await dbContext.MaintenanceRequestAttachments.SingleAsync();
             Assert.False(string.IsNullOrWhiteSpace(attachment.StorageKey));
             Assert.StartsWith("future-s3/demo-maintenance/", attachment.StorageKey);

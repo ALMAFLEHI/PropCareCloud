@@ -8,6 +8,33 @@ namespace PropCareCloud.Api.Tests;
 public sealed class AppDbContextModelTests
 {
     [Fact]
+    public void AppDbContext_EnforcesAccountAndTenantAssignmentUniquenessRules()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase($"propcare-model-{Guid.NewGuid()}")
+            .Options;
+
+        using var dbContext = new AppDbContext(options);
+        var accountEntity = dbContext.Model.FindEntityType(typeof(AuthUserAccount));
+        var tenantAssignmentEntity = dbContext.Model.FindEntityType(typeof(TenantUnitAssignment));
+
+        Assert.NotNull(accountEntity);
+        Assert.NotNull(tenantAssignmentEntity);
+
+        var accountEmailIndex = accountEntity.GetIndexes()
+            .Single(index => index.Properties.Select(property => property.Name).SequenceEqual(["Email"]));
+        var accountUserProfileIndex = accountEntity.GetIndexes()
+            .Single(index => index.Properties.Select(property => property.Name).SequenceEqual(["UserProfileId"]));
+        var activeRentalUnitIndex = tenantAssignmentEntity.GetIndexes()
+            .Single(index => index.Properties.Select(property => property.Name).SequenceEqual(["RentalUnitId"]));
+
+        Assert.True(accountEmailIndex.IsUnique);
+        Assert.True(accountUserProfileIndex.IsUnique);
+        Assert.True(activeRentalUnitIndex.IsUnique);
+        Assert.Equal("\"IsActive\" = TRUE AND \"LeaseEndDateUtc\" IS NULL", activeRentalUnitIndex.GetFilter());
+    }
+
+    [Fact]
     public async Task AppDbContext_CanSaveAndReadMaintenanceRequestGraph()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()

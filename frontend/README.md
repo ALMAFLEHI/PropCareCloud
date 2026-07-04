@@ -87,7 +87,8 @@ Demo credentials:
 | --- | --- | --- |
 | Admin / Owner | `admin@propcare.demo` | `PropCare@Admin123` |
 | Property Manager | `manager@propcare.demo` | `PropCare@Manager123` |
-| Tenant | `tenant@propcare.demo` | `PropCare@Tenant123` |
+| Tenant - Sara | `tenant@propcare.demo` | `PropCare@Tenant123` |
+| Tenant - Imran | `imran@propcare.demo` | `PropCare@Imran123` |
 | Maintenance Staff | `staff@propcare.demo` | `PropCare@Staff123` |
 
 Auth API calls:
@@ -116,6 +117,20 @@ Sprint 9.1 API calls:
 - `GET /api/user-profiles/tenants`
 - `GET /api/user-profiles/me/assigned-units`
 - `PATCH /api/maintenance-requests/{id}/assign`
+
+## Sprint 9.2 Tenant Isolation Demo
+
+The login page now shows five demo accounts, including two tenant accounts:
+
+- Sara Tenant: primary tenant demo.
+- Imran Tenant: secondary tenant isolation demo.
+
+Frontend validation expectations:
+
+- Sara and Imran each see only Dashboard and Maintenance Requests.
+- Sara and Imran receive request data filtered by the backend for their own tenant profile.
+- Sara and Imran get assigned-unit dropdowns from `GET /api/user-profiles/me/assigned-units`.
+- Tenant users do not see property management, users/roles, status update controls, or staff assignment controls.
 
 ## Validation
 

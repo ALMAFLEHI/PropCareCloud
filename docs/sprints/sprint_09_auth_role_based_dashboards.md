@@ -72,7 +72,8 @@ Add demo authentication and role-based user experience for PropCare Cloud so the
 | --- | --- | --- |
 | Admin / Owner | `admin@propcare.demo` | `PropCare@Admin123` |
 | Property Manager | `manager@propcare.demo` | `PropCare@Manager123` |
-| Tenant | `tenant@propcare.demo` | `PropCare@Tenant123` |
+| Tenant - Sara | `tenant@propcare.demo` | `PropCare@Tenant123` |
+| Tenant - Imran | `imran@propcare.demo` | `PropCare@Imran123` |
 | Maintenance Staff | `staff@propcare.demo` | `PropCare@Staff123` |
 
 These are demo assignment accounts only. Backend storage uses BCrypt password hashes and does not store plaintext passwords.
@@ -101,6 +102,20 @@ Sprint 9.1 fixes the Sprint 9 partial status by adding real backend role-based a
 - Frontend dashboard and request page controls now match the backend role rules.
 
 See `docs/sprints/sprint_09_1_role_based_access_control.md` for the detailed Sprint 9.1 closure record.
+
+## Sprint 9.2 Completion Update
+
+Sprint 9.2 validates multi-tenant account and unit isolation.
+
+- Sara and Imran are separate tenant demo accounts with separate `UserProfile` records.
+- Tenant/unit isolation applies to all tenant accounts, not only the demo users.
+- Tenants can have multiple active assigned units.
+- A rental unit can have only one active tenant assignment at a time.
+- Tenant request visibility is tied to the authenticated tenant profile.
+- Tenant request creation is limited to active assigned units.
+- The demo credential endpoint and frontend login panel now show both tenant demo accounts.
+
+See `docs/sprints/sprint_09_2_tenant_unit_logic_validation.md` for the detailed Sprint 9.2 closure record.
 
 ## Commands and Checks Performed
 
