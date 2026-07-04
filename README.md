@@ -238,6 +238,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
 
 ## Sprint 10 Admin User & Access Management
 
+- Sprint 10 is complete.
 - Admin User & Access Management module added.
 - Admin / Owner can list user accounts and filter by role/status.
 - Admin / Owner can create internal Property Manager and Maintenance Staff accounts.
@@ -245,6 +246,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
 - Disabled accounts cannot log in.
 - Admin / Owner can view tenant-unit assignments and assign tenants to available units.
 - One rental unit cannot have two active tenant assignments.
+- Evidence screenshots were captured under `docs/sprints/screenshots/`.
 - Tenant onboarding remains deferred to a future invitation/register flow.
 - No AWS Cognito, email sending, cloud deployment, or real secrets were added.
 
@@ -256,4 +258,4 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
 ```
 
-Next sprint: Workflow UX Enhancements.
+Next sprint: Sprint 11 Production UI/UX Polish & Workflow Enhancements.

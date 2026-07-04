@@ -165,7 +165,7 @@ Frontend:
 - End an assignment and confirm the unit becomes available.
 - Confirm Manager, Tenant, and Staff cannot access the page.
 
-## Evidence Screenshots Needed
+## Final Evidence Captured
 
 - `docs/sprints/screenshots/sprint_10_admin_access_management_overview.png`
 - `docs/sprints/screenshots/sprint_10_create_internal_user_form.png`
@@ -175,4 +175,6 @@ Frontend:
 
 ## Final Status
 
-COMPLETE for Sprint 10 code.
+COMPLETE.
+
+Sprint 10 is fully closed. Admin User & Access Management, admin-only backend access, account creation, disable/reactivate, password reset, tenant-unit assignment management, and evidence screenshots are complete.
