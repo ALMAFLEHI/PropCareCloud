@@ -148,12 +148,14 @@ Unauthorized API checks:
 - Demo passwords are stored as BCrypt hashes in the database.
 - Local database credentials must remain in user-secrets or environment variables.
 
-## Evidence Screenshots Needed Later
+## Evidence Captured
 
-- `docs/sprints/screenshots/sprint_09_1_tenant_my_requests_restricted.png`
-- `docs/sprints/screenshots/sprint_09_1_staff_assigned_queue.png`
-- `docs/sprints/screenshots/sprint_09_1_manager_request_controls.png`
-- `docs/sprints/screenshots/sprint_09_1_admin_full_navigation.png`
+- Sprint 9 role evidence screenshots were captured in the final Sprint 9 evidence closure:
+  - `docs/sprints/screenshots/sprint_09_tenant_sara_restricted_view.png`
+  - `docs/sprints/screenshots/sprint_09_tenant_imran_restricted_view.png`
+  - `docs/sprints/screenshots/sprint_09_admin_full_access.png`
+  - `docs/sprints/screenshots/sprint_09_manager_request_controls.png`
+  - `docs/sprints/screenshots/sprint_09_staff_assigned_queue.png`
 
 ## Final Status
 
@@ -163,7 +165,7 @@ COMPLETE for Sprint 9.1 code and automated validation.
 - `check-backend`: PASS, 41 backend tests passed
 - `check-frontend`: PASS
 
-Manual role screenshots are still needed before final Sprint 9 evidence closure.
+Manual role screenshots were captured in the final Sprint 9 evidence closure.
 
 ## Sprint 9.2 Follow-Up
 

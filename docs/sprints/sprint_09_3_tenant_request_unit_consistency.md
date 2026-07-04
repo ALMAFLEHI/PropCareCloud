@@ -133,13 +133,14 @@ Admin, Manager, and Staff:
 - Demo credentials remain assignment-only test accounts.
 - Local secrets must continue to stay in user-secrets or environment variables.
 
-## Evidence Screenshots Needed
+## Evidence Captured
 
-- `docs/sprints/screenshots/sprint_09_3_sara_units_match_requests.png`
-- `docs/sprints/screenshots/sprint_09_3_imran_units_match_requests.png`
-- `docs/sprints/screenshots/sprint_09_3_admin_all_tenant_requests.png`
-- `docs/sprints/screenshots/sprint_09_3_manager_request_controls.png`
-- `docs/sprints/screenshots/sprint_09_3_staff_assigned_queue.png`
+- Sprint 9.3 consistency evidence was captured in the final Sprint 9 evidence closure:
+  - `docs/sprints/screenshots/sprint_09_tenant_sara_restricted_view.png`
+  - `docs/sprints/screenshots/sprint_09_tenant_imran_restricted_view.png`
+  - `docs/sprints/screenshots/sprint_09_admin_full_access.png`
+  - `docs/sprints/screenshots/sprint_09_manager_request_controls.png`
+  - `docs/sprints/screenshots/sprint_09_staff_assigned_queue.png`
 
 ## Final Status
 

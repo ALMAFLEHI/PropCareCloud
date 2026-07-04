@@ -143,12 +143,12 @@ Manual role checks:
 - Property Manager sees all tenant requests and assignment/status controls.
 - Maintenance Staff sees only assigned jobs.
 
-## Evidence Screenshots Needed
+## Evidence Captured
 
-- `docs/sprints/screenshots/sprint_09_2_demo_credentials_two_tenants.png`
-- `docs/sprints/screenshots/sprint_09_2_sara_tenant_isolated_requests.png`
-- `docs/sprints/screenshots/sprint_09_2_imran_tenant_isolated_requests.png`
-- `docs/sprints/screenshots/sprint_09_2_admin_all_tenant_requests.png`
+- Sprint 9 tenant isolation evidence screenshots were captured in the final Sprint 9 evidence closure:
+  - `docs/sprints/screenshots/sprint_09_tenant_sara_restricted_view.png`
+  - `docs/sprints/screenshots/sprint_09_tenant_imran_restricted_view.png`
+  - `docs/sprints/screenshots/sprint_09_admin_full_access.png`
 
 ## Sprint 9.3 Follow-Up
 
@@ -175,4 +175,4 @@ COMPLETE for Sprint 9.2 code and automated validation.
 - `check-backend`: PASS, 47 backend tests passed
 - `check-frontend`: PASS
 
-Manual evidence screenshots are still needed before closing Sprint 9 evidence.
+Manual evidence screenshots were captured in the final Sprint 9 evidence closure.

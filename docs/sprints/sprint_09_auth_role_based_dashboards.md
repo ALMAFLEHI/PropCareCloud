@@ -127,7 +127,7 @@ Sprint 9.3 fixes the manual validation mismatch between tenant assigned units an
 - Imran request units are limited to Imran assigned units.
 - Tenant create request authorization still uses authenticated tenant profile and active tenant-unit assignments.
 - The frontend tenant dashboard and request form continue to consume assigned units from the backend.
-- Sprint 9 evidence can now be finalized after the Sprint 9.3 screenshots are captured.
+- Sprint 9 evidence screenshots were captured during final Sprint 9 closure.
 
 See `docs/sprints/sprint_09_3_tenant_request_unit_consistency.md` for the detailed Sprint 9.3 closure record.
 
@@ -188,13 +188,16 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
 - No cloud deployment.
 - No production-grade authorization policy matrix.
 
-## Evidence Screenshots Needed Later
+## Final Evidence Captured
 
-- `docs/sprints/screenshots/sprint_09_login_demo_credentials.png`
-- `docs/sprints/screenshots/sprint_09_admin_dashboard.png`
-- `docs/sprints/screenshots/sprint_09_tenant_dashboard.png`
-- `docs/sprints/screenshots/sprint_09_staff_dashboard.png`
+- `docs/sprints/screenshots/sprint_09_tenant_sara_restricted_view.png`
+- `docs/sprints/screenshots/sprint_09_tenant_imran_restricted_view.png`
+- `docs/sprints/screenshots/sprint_09_admin_full_access.png`
+- `docs/sprints/screenshots/sprint_09_manager_request_controls.png`
+- `docs/sprints/screenshots/sprint_09_staff_assigned_queue.png`
 
 ## Final Status
 
-Sprint 9 initial authentication and role dashboard work was PARTIAL until Sprint 9.1. Sprint 9.1, Sprint 9.2, and Sprint 9.3 are COMPLETE for backend RBAC, tenant isolation, tenant request/unit consistency, and automated validation; final Sprint 9 evidence closure still requires manual role screenshots.
+COMPLETE.
+
+Sprint 9 is fully closed. Authentication, role-based dashboards, backend RBAC enforcement, tenant account isolation, tenant-unit consistency, and manual role evidence screenshots are complete.

@@ -143,6 +143,7 @@ Authentication, authorization enforcement, production-ready user lookup, Amazon 
 
 ## Sprint 9 Authentication and Role-Based Dashboards
 
+- Sprint 9 is complete.
 - Demo JWT authentication added for assignment testing.
 - Demo accounts are available for Admin / Owner, Property Manager, Tenant, and Maintenance Staff roles.
 - Frontend login route: `/login`.
@@ -193,6 +194,7 @@ AWS Cognito, production invitations, Amazon RDS cloud connectivity, and cloud de
 
 ## Sprint 9.2 Tenant Unit Account Isolation
 
+- Sprint 9.2 is complete.
 - Multi-tenant account/unit logic validated for real SaaS-style tenant isolation.
 - Sara Tenant and Imran Tenant are separate demo tenant login accounts with separate `UserProfile` records.
 - The tenant isolation logic applies to all future tenants through authenticated `userProfileId` values and tenant-unit assignments.
@@ -204,10 +206,11 @@ AWS Cognito, production invitations, Amazon RDS cloud connectivity, and cloud de
 - Maintenance Staff still see only assigned jobs.
 - Sprint 9.2 migration: `HardenTenantUnitAssignmentIndexes`.
 
-Manual evidence screenshots are needed before final Sprint 9 evidence closure.
+Manual evidence screenshots were captured during final Sprint 9 evidence closure.
 
 ## Sprint 9.3 Tenant Request and Unit Consistency
 
+- Sprint 9.3 is complete.
 - Manual validation found that demo request units and assigned units did not fully match.
 - Sara Tenant now has assigned units `B-1102` and `A-0101`.
 - Imran Tenant now has assigned units `A-0205` and `B-1208`.
@@ -224,4 +227,11 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
 ```
 
-Final Sprint 9 screenshots are still needed before closing the full Sprint 9 evidence set.
+## Sprint 9 Final Evidence Closure
+
+- Authentication and role-based dashboards are complete.
+- Sprint 9.1 backend RBAC enforcement is complete.
+- Sprint 9.2 tenant account/unit isolation is complete.
+- Sprint 9.3 tenant request/unit consistency is complete.
+- Manual evidence screenshots were captured and saved under `docs/sprints/screenshots/`.
+- Next sprint: Sprint 10 Admin User & Access Management.
