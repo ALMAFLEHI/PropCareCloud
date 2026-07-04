@@ -10,3 +10,79 @@ export type SystemInfoResponse = {
   architecture: string
   environment: string
 }
+
+export type ApiEnumValue = string | number
+
+export type PropertyResponse = {
+  id: string
+  name: string
+  addressLine1: string
+  addressLine2?: string | null
+  city: string
+  country: string
+  status: ApiEnumValue
+  createdAtUtc: string
+  unitCount: number
+}
+
+export type PropertyCreateRequest = {
+  name: string
+  addressLine1: string
+  addressLine2?: string | null
+  city: string
+  country: string
+  status: ApiEnumValue
+}
+
+export type RentalUnitResponse = {
+  id: string
+  propertyId: string
+  unitNumber: string
+  floor?: string | null
+  bedrooms?: number | null
+  status: ApiEnumValue
+  createdAtUtc: string
+}
+
+export type MaintenanceRequestResponse = {
+  id: string
+  rentalUnitId: string
+  unitNumber: string
+  tenantProfileId: string
+  tenantName: string
+  assignedStaffProfileId?: string | null
+  assignedStaffName?: string | null
+  title: string
+  description: string
+  category: ApiEnumValue
+  priority: ApiEnumValue
+  status: ApiEnumValue
+  createdAtUtc: string
+  updatedAtUtc?: string | null
+  completedAtUtc?: string | null
+  commentCount: number
+  attachmentCount: number
+}
+
+export type MaintenanceRequestCreateRequest = {
+  rentalUnitId: string
+  tenantProfileId: string
+  title: string
+  description: string
+  category: ApiEnumValue
+  priority: ApiEnumValue
+}
+
+export type MaintenanceRequestStatusUpdateRequest = {
+  status: ApiEnumValue
+}
+
+export type MaintenanceRequestCommentResponse = {
+  id: string
+  maintenanceRequestId: string
+  userProfileId: string
+  userFullName: string
+  commentText: string
+  isInternal: boolean
+  createdAtUtc: string
+}

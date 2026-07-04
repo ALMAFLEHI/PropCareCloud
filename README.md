@@ -126,3 +126,17 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-crud-api.ps1
 ```
 
 Authentication, authorization enforcement, frontend CRUD integration, Amazon RDS, and AWS deployment remain deferred to later sprints.
+
+## Sprint 8 Frontend CRUD Integration
+
+- React frontend integrated with Sprint 7 CRUD APIs.
+- Dashboard now shows live property/request counts and recent maintenance requests.
+- Properties page lists backend properties, displays selected property units, and creates properties.
+- Maintenance Requests page lists backend requests, creates demo requests with seeded IDs, and updates request status.
+- Full-stack local validation command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
+```
+
+Authentication, authorization enforcement, production-ready user lookup, Amazon RDS cloud connectivity, and AWS deployment remain deferred to later sprints.

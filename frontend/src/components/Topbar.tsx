@@ -12,7 +12,7 @@ function Topbar() {
             <h1 className="text-lg font-semibold text-slate-950">
               PropCare Cloud
             </h1>
-            <p className="text-sm text-slate-500">Sprint 3 UI Foundation</p>
+            <p className="text-sm text-slate-500">Sprint 8 CRUD Integration</p>
           </div>
         </div>
 

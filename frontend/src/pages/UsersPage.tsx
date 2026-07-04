@@ -37,8 +37,20 @@ function UsersPage() {
           Role-based access foundation
         </h2>
         <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
-          Authentication is intentionally deferred. This page identifies the
-          planned access model for future authorization and user management.
+          Authentication and user management remain intentionally deferred. Sprint
+          8 uses seeded local user profiles only for CRUD validation, while this
+          page records the future role-based access model.
+        </p>
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <h3 className="text-base font-semibold text-slate-950">
+          Sprint 8 scope note
+        </h3>
+        <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-600">
+          No login screen, password handling, JWT flow, or authorization
+          enforcement has been added yet. Those security features will be handled
+          in a later sprint after the core CRUD screens are validated.
         </p>
       </section>
 
