@@ -117,6 +117,20 @@ Sprint 9.2 validates multi-tenant account and unit isolation.
 
 See `docs/sprints/sprint_09_2_tenant_unit_logic_validation.md` for the detailed Sprint 9.2 closure record.
 
+## Sprint 9.3 Completion Update
+
+Sprint 9.3 fixes the manual validation mismatch between tenant assigned units and seeded request units.
+
+- Sara Tenant now has active assigned units `B-1102` and `A-0101`.
+- Imran Tenant now has active assigned units `A-0205` and `B-1208`.
+- Sara request units are limited to Sara assigned units.
+- Imran request units are limited to Imran assigned units.
+- Tenant create request authorization still uses authenticated tenant profile and active tenant-unit assignments.
+- The frontend tenant dashboard and request form continue to consume assigned units from the backend.
+- Sprint 9 evidence can now be finalized after the Sprint 9.3 screenshots are captured.
+
+See `docs/sprints/sprint_09_3_tenant_request_unit_consistency.md` for the detailed Sprint 9.3 closure record.
+
 ## Commands and Checks Performed
 
 ```powershell
@@ -183,4 +197,4 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
 
 ## Final Status
 
-Sprint 9 initial authentication and role dashboard work was PARTIAL until Sprint 9.1. Sprint 9.1 is COMPLETE for backend RBAC/data filtering code and automated validation; final Sprint 9 evidence closure still requires manual role screenshots.
+Sprint 9 initial authentication and role dashboard work was PARTIAL until Sprint 9.1. Sprint 9.1, Sprint 9.2, and Sprint 9.3 are COMPLETE for backend RBAC, tenant isolation, tenant request/unit consistency, and automated validation; final Sprint 9 evidence closure still requires manual role screenshots.

@@ -205,3 +205,23 @@ AWS Cognito, production invitations, Amazon RDS cloud connectivity, and cloud de
 - Sprint 9.2 migration: `HardenTenantUnitAssignmentIndexes`.
 
 Manual evidence screenshots are needed before final Sprint 9 evidence closure.
+
+## Sprint 9.3 Tenant Request and Unit Consistency
+
+- Manual validation found that demo request units and assigned units did not fully match.
+- Sara Tenant now has assigned units `B-1102` and `A-0101`.
+- Imran Tenant now has assigned units `A-0205` and `B-1208`.
+- Sara request units are only Sara assigned units.
+- Imran request units are only Imran assigned units.
+- The existing Sprint 9.2 model supports this without a new migration.
+- Tenant request creation remains limited to active assigned units for the authenticated tenant.
+
+Validation commands:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
+```
+
+Final Sprint 9 screenshots are still needed before closing the full Sprint 9 evidence set.

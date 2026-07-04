@@ -132,6 +132,18 @@ Frontend validation expectations:
 - Sara and Imran get assigned-unit dropdowns from `GET /api/user-profiles/me/assigned-units`.
 - Tenant users do not see property management, users/roles, status update controls, or staff assignment controls.
 
+## Sprint 9.3 Tenant Unit Consistency
+
+The frontend did not require new logic for Sprint 9.3. It already renders assigned tenant units from the backend.
+
+Manual validation expectations after the backend fix:
+
+- Sara Tenant assigned units: `B-1102` and `A-0101`.
+- Sara Tenant requests: `Lobby access card issue` and `Kitchen sink leaking`.
+- Imran Tenant assigned units: `A-0205` and `B-1208`.
+- Imran Tenant requests: `Air conditioner not cooling` and `Bathroom light flickering`.
+- The tenant create request dropdown should show only the signed-in tenant's assigned units.
+
 ## Validation
 
 From the project root:

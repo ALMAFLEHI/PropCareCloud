@@ -305,6 +305,16 @@ public sealed class SeedDataService(AppDbContext dbContext) : ISeedDataService
                 LeaseStartDateUtc = timestampUtc.AddMonths(-5),
                 IsActive = true,
                 CreatedAtUtc = timestampUtc
+            },
+            new()
+            {
+                TenantProfileId = tenantTwo.Id,
+                TenantProfile = tenantTwo,
+                RentalUnitId = units[3].Id,
+                RentalUnit = units[3],
+                LeaseStartDateUtc = timestampUtc.AddMonths(-3),
+                IsActive = true,
+                CreatedAtUtc = timestampUtc
             }
         ];
     }

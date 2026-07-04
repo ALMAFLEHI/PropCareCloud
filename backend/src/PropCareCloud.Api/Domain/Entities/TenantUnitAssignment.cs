@@ -1,5 +1,3 @@
-using PropCareCloud.Api.Domain.Enums;
-
 namespace PropCareCloud.Api.Domain.Entities;
 
 public sealed class TenantUnitAssignment
@@ -14,8 +12,8 @@ public sealed class TenantUnitAssignment
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
-    public bool CanCreateRequestForUnit(UnitStatus unitStatus)
+    public bool CanCreateRequestForUnit()
     {
-        return IsActive && LeaseEndDateUtc is null && unitStatus == UnitStatus.Occupied;
+        return IsActive && LeaseEndDateUtc is null;
     }
 }

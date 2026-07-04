@@ -80,11 +80,10 @@ public sealed class AuthServiceTests
         Assert.Equal(UserRole.Tenant, saraAccount.UserProfile?.Role);
         Assert.Equal(UserRole.Tenant, imranAccount.UserProfile?.Role);
         Assert.NotEqual(saraAccount.UserProfileId, imranAccount.UserProfileId);
-        Assert.Single(saraAssignments);
-        Assert.Single(imranAssignments);
-        Assert.NotEqual(saraAssignments[0].RentalUnitId, imranAssignments[0].RentalUnitId);
-        Assert.Equal("B-1102", saraAssignments[0].RentalUnit?.UnitNumber);
-        Assert.Equal("A-0205", imranAssignments[0].RentalUnit?.UnitNumber);
+        Assert.Equal(2, saraAssignments.Count);
+        Assert.Equal(2, imranAssignments.Count);
+        Assert.Equal(new[] { "A-0101", "B-1102" }, GetActiveUnitNumbers(saraAssignments));
+        Assert.Equal(new[] { "A-0205", "B-1208" }, GetActiveUnitNumbers(imranAssignments));
         Assert.Equal(activeAssignments.Count, activeAssignments.Select(assignment => assignment.RentalUnitId).Distinct().Count());
     }
 
@@ -235,6 +234,15 @@ public sealed class AuthServiceTests
             Bedrooms = 1,
             Status = UnitStatus.Occupied
         };
+        var saraSecondUnit = new RentalUnit
+        {
+            PropertyId = property.Id,
+            Property = property,
+            UnitNumber = "A-0101",
+            Floor = "1",
+            Bedrooms = 2,
+            Status = UnitStatus.Occupied
+        };
         var imranUnit = new RentalUnit
         {
             PropertyId = property.Id,
@@ -244,9 +252,27 @@ public sealed class AuthServiceTests
             Bedrooms = 3,
             Status = UnitStatus.Occupied
         };
+        var imranSecondUnit = new RentalUnit
+        {
+            PropertyId = property.Id,
+            Property = property,
+            UnitNumber = "B-1208",
+            Floor = "12",
+            Bedrooms = 2,
+            Status = UnitStatus.UnderMaintenance
+        };
 
         dbContext.Properties.Add(property);
-        dbContext.RentalUnits.AddRange(unit, imranUnit);
+        dbContext.RentalUnits.AddRange(unit, saraSecondUnit, imranUnit, imranSecondUnit);
         await dbContext.SaveChangesAsync();
+    }
+
+    private static string[] GetActiveUnitNumbers(IReadOnlyCollection<TenantUnitAssignment> assignments)
+    {
+        return assignments
+            .Where(assignment => assignment.IsActive && assignment.LeaseEndDateUtc == null)
+            .Select(assignment => assignment.RentalUnit?.UnitNumber ?? string.Empty)
+            .Order()
+            .ToArray();
     }
 }

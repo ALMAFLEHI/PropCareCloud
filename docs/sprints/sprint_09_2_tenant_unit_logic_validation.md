@@ -150,6 +150,15 @@ Manual role checks:
 - `docs/sprints/screenshots/sprint_09_2_imran_tenant_isolated_requests.png`
 - `docs/sprints/screenshots/sprint_09_2_admin_all_tenant_requests.png`
 
+## Sprint 9.3 Follow-Up
+
+Sprint 9.3 corrected the remaining manual validation mismatch between tenant assigned units and seeded request units.
+
+- Sara Tenant active units: `B-1102` and `A-0101`.
+- Imran Tenant active units: `A-0205` and `B-1208`.
+- Sara and Imran seeded request unit IDs are now subsets of their own active assigned unit IDs.
+- The existing Sprint 9.2 schema and filtered unique active-unit assignment index were sufficient, so no migration was needed.
+
 ## Security Notes
 
 - No AWS services, Cognito, production invitations, RDS cloud connection, or deployment were configured.

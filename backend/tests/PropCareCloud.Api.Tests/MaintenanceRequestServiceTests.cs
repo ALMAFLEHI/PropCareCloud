@@ -371,7 +371,7 @@ public sealed class MaintenanceRequestServiceTests
 
         var created = await imranService.CreateRequestAsync(new MaintenanceRequestCreateRequest
         {
-            RentalUnitId = seed.ImranUnit.Id,
+            RentalUnitId = seed.ImranSecondUnit.Id,
             TenantProfileId = seed.SaraTenant.Id,
             Title = "Bedroom light repair",
             Description = "The backend should use Imran's authenticated tenant profile.",
@@ -381,7 +381,7 @@ public sealed class MaintenanceRequestServiceTests
 
         Assert.NotNull(created);
         Assert.Equal(seed.ImranTenant.Id, created.TenantProfileId);
-        Assert.Equal(seed.ImranUnit.Id, created.RentalUnitId);
+        Assert.Equal(seed.ImranSecondUnit.Id, created.RentalUnitId);
     }
 
     [Fact]
@@ -557,6 +557,15 @@ public sealed class MaintenanceRequestServiceTests
             Bedrooms = 1,
             Status = UnitStatus.Occupied
         };
+        var saraSecondUnit = new RentalUnit
+        {
+            PropertyId = property.Id,
+            Property = property,
+            UnitNumber = "A-0101",
+            Floor = "1",
+            Bedrooms = 2,
+            Status = UnitStatus.Occupied
+        };
         var imranUnit = new RentalUnit
         {
             PropertyId = property.Id,
@@ -565,6 +574,15 @@ public sealed class MaintenanceRequestServiceTests
             Floor = "2",
             Bedrooms = 3,
             Status = UnitStatus.Occupied
+        };
+        var imranSecondUnit = new RentalUnit
+        {
+            PropertyId = property.Id,
+            Property = property,
+            UnitNumber = "B-1208",
+            Floor = "12",
+            Bedrooms = 2,
+            Status = UnitStatus.UnderMaintenance
         };
         var saraTenant = new UserProfile
         {
@@ -618,7 +636,7 @@ public sealed class MaintenanceRequestServiceTests
         };
 
         dbContext.Properties.Add(property);
-        dbContext.RentalUnits.AddRange(saraUnit, imranUnit);
+        dbContext.RentalUnits.AddRange(saraUnit, saraSecondUnit, imranUnit, imranSecondUnit);
         dbContext.UserProfiles.AddRange(saraTenant, imranTenant, manager, staff);
         dbContext.TenantUnitAssignments.AddRange(
             new TenantUnitAssignment
@@ -631,10 +649,26 @@ public sealed class MaintenanceRequestServiceTests
             },
             new TenantUnitAssignment
             {
+                TenantProfileId = saraTenant.Id,
+                TenantProfile = saraTenant,
+                RentalUnitId = saraSecondUnit.Id,
+                RentalUnit = saraSecondUnit,
+                IsActive = true
+            },
+            new TenantUnitAssignment
+            {
                 TenantProfileId = imranTenant.Id,
                 TenantProfile = imranTenant,
                 RentalUnitId = imranUnit.Id,
                 RentalUnit = imranUnit,
+                IsActive = true
+            },
+            new TenantUnitAssignment
+            {
+                TenantProfileId = imranTenant.Id,
+                TenantProfile = imranTenant,
+                RentalUnitId = imranSecondUnit.Id,
+                RentalUnit = imranSecondUnit,
                 IsActive = true
             });
         dbContext.MaintenanceRequests.AddRange(saraRequest, imranRequest);
@@ -646,7 +680,9 @@ public sealed class MaintenanceRequestServiceTests
             manager,
             staff,
             saraUnit,
+            saraSecondUnit,
             imranUnit,
+            imranSecondUnit,
             saraRequest,
             imranRequest);
     }
@@ -665,7 +701,9 @@ public sealed class MaintenanceRequestServiceTests
         UserProfile Manager,
         UserProfile Staff,
         RentalUnit SaraUnit,
+        RentalUnit SaraSecondUnit,
         RentalUnit ImranUnit,
+        RentalUnit ImranSecondUnit,
         MaintenanceRequest SaraRequest,
         MaintenanceRequest ImranRequest);
 

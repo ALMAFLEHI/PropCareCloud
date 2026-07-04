@@ -34,7 +34,7 @@ public sealed class SeedDataServiceTests
             Assert.Equal(6, await dbContext.UserProfiles.CountAsync());
             Assert.Equal(2, await dbContext.Properties.CountAsync());
             Assert.Equal(4, await dbContext.RentalUnits.CountAsync());
-            Assert.Equal(3, await dbContext.TenantUnitAssignments.CountAsync());
+            Assert.Equal(4, await dbContext.TenantUnitAssignments.CountAsync());
             Assert.Equal(4, await dbContext.MaintenanceRequests.CountAsync());
             Assert.Equal(4, await dbContext.MaintenanceRequestComments.CountAsync());
             Assert.Equal(1, await dbContext.MaintenanceRequestAttachments.CountAsync());
@@ -59,9 +59,23 @@ public sealed class SeedDataServiceTests
                 .ToListAsync();
 
             Assert.Equal(2, saraAssignments.Count);
-            Assert.Single(imranAssignments);
+            Assert.Equal(2, imranAssignments.Count);
             Assert.Empty(saraAssignments.Select(assignment => assignment.RentalUnitId)
                 .Intersect(imranAssignments.Select(assignment => assignment.RentalUnitId)));
+
+            var saraRequestUnitIds = await dbContext.MaintenanceRequests
+                .Where(request => request.TenantProfileId == saraTenantId)
+                .Select(request => request.RentalUnitId)
+                .Distinct()
+                .ToListAsync();
+            var imranRequestUnitIds = await dbContext.MaintenanceRequests
+                .Where(request => request.TenantProfileId == imranTenantId)
+                .Select(request => request.RentalUnitId)
+                .Distinct()
+                .ToListAsync();
+
+            Assert.Empty(saraRequestUnitIds.Except(saraAssignments.Select(assignment => assignment.RentalUnitId)));
+            Assert.Empty(imranRequestUnitIds.Except(imranAssignments.Select(assignment => assignment.RentalUnitId)));
 
             var attachment = await dbContext.MaintenanceRequestAttachments.SingleAsync();
             Assert.False(string.IsNullOrWhiteSpace(attachment.StorageKey));
@@ -98,7 +112,7 @@ public sealed class SeedDataServiceTests
             Assert.Equal(0, result.CommentsCreated);
             Assert.Equal(0, result.AttachmentsCreated);
             Assert.Equal(6, await dbContext.UserProfiles.CountAsync());
-            Assert.Equal(3, await dbContext.TenantUnitAssignments.CountAsync());
+            Assert.Equal(4, await dbContext.TenantUnitAssignments.CountAsync());
             Assert.Equal(4, await dbContext.MaintenanceRequests.CountAsync());
         }
     }

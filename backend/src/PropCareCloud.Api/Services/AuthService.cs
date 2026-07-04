@@ -34,7 +34,7 @@ public sealed class AuthService(
             Role: UserRole.AdminOwner,
             FullName: "Amina Owner",
             SeedEmail: "admin.owner@example.com",
-            PreferredUnitNumber: null,
+            RequiredUnitNumbers: [],
             Purpose: "Full portfolio, property, request, and user oversight demo account."),
         new(
             RoleLabel: "Property Manager",
@@ -43,7 +43,7 @@ public sealed class AuthService(
             Role: UserRole.PropertyManager,
             FullName: "Daniel Property Manager",
             SeedEmail: "manager1@example.com",
-            PreferredUnitNumber: null,
+            RequiredUnitNumbers: [],
             Purpose: "Property and maintenance workflow management demo account."),
         new(
             RoleLabel: "Tenant - Sara",
@@ -52,7 +52,7 @@ public sealed class AuthService(
             Role: UserRole.Tenant,
             FullName: "Sara Tenant",
             SeedEmail: "tenant1@example.com",
-            PreferredUnitNumber: "B-1102",
+            RequiredUnitNumbers: ["B-1102", "A-0101"],
             Purpose: "Primary tenant demo account for assigned-unit request isolation."),
         new(
             RoleLabel: "Tenant - Imran",
@@ -61,7 +61,7 @@ public sealed class AuthService(
             Role: UserRole.Tenant,
             FullName: "Imran Tenant",
             SeedEmail: "tenant2@example.com",
-            PreferredUnitNumber: "A-0205",
+            RequiredUnitNumbers: ["A-0205", "B-1208"],
             Purpose: "Secondary tenant isolation demo account with separate unit and request data."),
         new(
             RoleLabel: "Maintenance Staff",
@@ -70,7 +70,7 @@ public sealed class AuthService(
             Role: UserRole.MaintenanceStaff,
             FullName: "Nadia Maintenance Staff",
             SeedEmail: "staff1@example.com",
-            PreferredUnitNumber: null,
+            RequiredUnitNumbers: [],
             Purpose: "Maintenance work queue and status update demo account.")
     ];
 
@@ -156,7 +156,7 @@ public sealed class AuthService(
 
             if (demoAccount.Role == UserRole.Tenant)
             {
-                await EnsureTenantUnitAssignmentAsync(userProfile, demoAccount.PreferredUnitNumber);
+                await EnsureTenantUnitAssignmentsAsync(userProfile, demoAccount.RequiredUnitNumbers);
             }
         }
 
@@ -192,11 +192,24 @@ public sealed class AuthService(
         return userProfile;
     }
 
-    private async Task EnsureTenantUnitAssignmentAsync(
+    private async Task EnsureTenantUnitAssignmentsAsync(
         UserProfile tenantProfile,
-        string? preferredUnitNumber)
+        IReadOnlyCollection<string> requiredUnitNumbers)
     {
-        var hasActiveAssignment = await dbContext.TenantUnitAssignments
+        foreach (var unitNumber in requiredUnitNumbers)
+        {
+            var rentalUnit = await dbContext.RentalUnits
+                .Where(unit => unit.UnitNumber == unitNumber)
+                .OrderBy(unit => unit.CreatedAtUtc)
+                .FirstOrDefaultAsync();
+            if (rentalUnit is not null)
+            {
+                await EnsureActiveTenantUnitAssignmentAsync(tenantProfile, rentalUnit);
+            }
+        }
+
+        var hasActiveAssignment = HasTrackedActiveAssignmentForTenant(tenantProfile.Id) ||
+            await dbContext.TenantUnitAssignments
             .AnyAsync(assignment =>
                 assignment.TenantProfileId == tenantProfile.Id &&
                 assignment.IsActive &&
@@ -206,30 +219,89 @@ public sealed class AuthService(
             return;
         }
 
-        var assignedUnit = await dbContext.RentalUnits
-            .Where(unit => unit.Status == UnitStatus.Occupied)
+        var fallbackUnit = await dbContext.RentalUnits
             .Where(unit => !dbContext.TenantUnitAssignments.Any(assignment =>
                 assignment.RentalUnitId == unit.Id &&
                 assignment.IsActive &&
                 assignment.LeaseEndDateUtc == null))
-            .OrderBy(unit => preferredUnitNumber != null && unit.UnitNumber == preferredUnitNumber ? 0 : 1)
-            .ThenBy(unit => unit.UnitNumber)
+            .OrderBy(unit => unit.UnitNumber)
             .FirstOrDefaultAsync();
-        if (assignedUnit is null)
+        if (fallbackUnit is null)
         {
             return;
+        }
+
+        await EnsureActiveTenantUnitAssignmentAsync(tenantProfile, fallbackUnit);
+    }
+
+    private bool HasTrackedActiveAssignmentForTenant(Guid tenantProfileId)
+    {
+        return dbContext.ChangeTracker
+            .Entries<TenantUnitAssignment>()
+            .Any(entry =>
+                entry.State != EntityState.Deleted &&
+                entry.Entity.TenantProfileId == tenantProfileId &&
+                entry.Entity.IsActive &&
+                entry.Entity.LeaseEndDateUtc == null);
+    }
+
+    private async Task EnsureActiveTenantUnitAssignmentAsync(
+        UserProfile tenantProfile,
+        RentalUnit rentalUnit)
+    {
+        var activeAssignments = await dbContext.TenantUnitAssignments
+            .Include(assignment => assignment.TenantProfile)
+            .Where(assignment =>
+                assignment.RentalUnitId == rentalUnit.Id &&
+                assignment.IsActive &&
+                assignment.LeaseEndDateUtc == null)
+            .ToListAsync();
+        if (activeAssignments.Any(assignment => assignment.TenantProfileId == tenantProfile.Id))
+        {
+            return;
+        }
+
+        var timestampUtc = DateTime.UtcNow;
+        foreach (var activeAssignment in activeAssignments)
+        {
+            if (!IsDemoTenantProfile(activeAssignment.TenantProfile))
+            {
+                return;
+            }
+
+            activeAssignment.IsActive = false;
+            activeAssignment.LeaseEndDateUtc = timestampUtc;
+        }
+
+        if (activeAssignments.Count > 0)
+        {
+            await dbContext.SaveChangesAsync();
         }
 
         dbContext.TenantUnitAssignments.Add(new TenantUnitAssignment
         {
             TenantProfileId = tenantProfile.Id,
             TenantProfile = tenantProfile,
-            RentalUnitId = assignedUnit.Id,
-            RentalUnit = assignedUnit,
-            LeaseStartDateUtc = DateTime.UtcNow.AddMonths(-6),
+            RentalUnitId = rentalUnit.Id,
+            RentalUnit = rentalUnit,
+            LeaseStartDateUtc = timestampUtc.AddMonths(-6),
             IsActive = true,
-            CreatedAtUtc = DateTime.UtcNow
+            CreatedAtUtc = timestampUtc
         });
+    }
+
+    private static bool IsDemoTenantProfile(UserProfile? userProfile)
+    {
+        if (userProfile is null)
+        {
+            return false;
+        }
+
+        var normalizedEmail = NormalizeEmail(userProfile.Email);
+        return DemoAccounts.Any(account =>
+            account.Role == UserRole.Tenant &&
+            (NormalizeEmail(account.Email) == normalizedEmail ||
+             NormalizeEmail(account.SeedEmail) == normalizedEmail));
     }
 
     private string GenerateToken(AuthUserAccount account, DateTime expiresAtUtc)
@@ -306,6 +378,6 @@ public sealed class AuthService(
         UserRole Role,
         string FullName,
         string SeedEmail,
-        string? PreferredUnitNumber,
+        string[] RequiredUnitNumbers,
         string Purpose);
 }

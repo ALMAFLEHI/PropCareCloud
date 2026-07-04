@@ -342,14 +342,11 @@ public sealed class MaintenanceRequestService(
     private async Task<bool> TenantCanCreateForUnitAsync(Guid tenantProfileId, Guid rentalUnitId)
     {
         return await dbContext.TenantUnitAssignments
-            .Include(assignment => assignment.RentalUnit)
             .AnyAsync(assignment =>
                 assignment.TenantProfileId == tenantProfileId &&
                 assignment.RentalUnitId == rentalUnitId &&
                 assignment.IsActive &&
-                assignment.LeaseEndDateUtc == null &&
-                assignment.RentalUnit != null &&
-                assignment.RentalUnit.Status == UnitStatus.Occupied);
+                assignment.LeaseEndDateUtc == null);
     }
 
     private bool CanUpdateStatus(MaintenanceRequest maintenanceRequest, MaintenanceStatus status)

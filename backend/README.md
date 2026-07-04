@@ -241,6 +241,18 @@ Tenant request rules:
 - Tenant create request is limited to active assigned units.
 - Tenant status updates remain forbidden.
 
+## Sprint 9.3 Tenant Request and Unit Consistency
+
+Sprint 9.3 fixes the remaining demo data mismatch between tenant assigned units and seeded request units.
+
+- Sara Tenant active units: `B-1102` and `A-0101`.
+- Imran Tenant active units: `A-0205` and `B-1208`.
+- Sara seeded requests use only Sara assigned units.
+- Imran seeded requests use only Imran assigned units.
+- Demo account setup and seed data remain idempotent.
+- No new migration was required because the Sprint 9.2 schema already supports multiple active units per tenant.
+- No real secrets, database passwords, AWS keys, or production JWT secrets are committed.
+
 ## Notes
 
 Real RDS connectivity, AWS Cognito, production password reset, email invitation flow, and AWS deployment will be added in later sprints. No production secrets, AWS credentials, or real database connection strings are configured in this sprint.
