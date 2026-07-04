@@ -17,8 +17,10 @@ import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
+import { useAuth } from '../context/AuthContext'
 import type { ApiEnumValue, MaintenanceRequestResponse } from '../types/api'
 import { formatDateTime, getCategoryLabel } from '../utils/formatters'
+import type { UserRoleKey } from '../utils/roles'
 
 const requestSteps = [
   {
@@ -87,6 +89,29 @@ const initialRequestForm = {
   priority: '1',
 }
 
+const requestPageCopy: Record<UserRoleKey, { title: string; description: string }> = {
+  AdminOwner: {
+    title: 'Portfolio request oversight',
+    description:
+      'Review all maintenance records across the demo portfolio and monitor request workload.',
+  },
+  PropertyManager: {
+    title: 'Maintenance request management',
+    description:
+      'Review tenant requests, track priorities, and update request status for local workflow validation.',
+  },
+  Tenant: {
+    title: 'Submit and track requests',
+    description:
+      'Create a maintenance request with seeded tenant/unit IDs and follow request progress.',
+  },
+  MaintenanceStaff: {
+    title: 'Assigned work queue',
+    description:
+      'Review maintenance jobs and update progress as work moves through the demo workflow.',
+  },
+}
+
 function getStatusValue(status: ApiEnumValue) {
   if (typeof status === 'number') {
     return String(status)
@@ -101,6 +126,7 @@ function getStatusValue(status: ApiEnumValue) {
 }
 
 function RequestsPage() {
+  const { userRoleKey } = useAuth()
   const [requests, setRequests] = useState<MaintenanceRequestResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
@@ -108,6 +134,7 @@ function RequestsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [updatingRequestId, setUpdatingRequestId] = useState('')
   const [form, setForm] = useState(initialRequestForm)
+  const copy = requestPageCopy[userRoleKey ?? 'Tenant']
 
   const seededRequest = requests[0]
 
@@ -207,22 +234,22 @@ function RequestsPage() {
               Maintenance Requests
             </p>
             <h2 className="mt-3 text-3xl font-semibold text-slate-950">
-              Live request workflow
+              {copy.title}
             </h2>
             <p className="mt-4 text-base leading-7 text-slate-600">
-              This page lists seeded maintenance requests, creates demo
-              requests with existing tenant/unit IDs, and updates request status
-              through the Sprint 7 backend API.
+              {copy.description}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={openCreateModal}
-            className="inline-flex w-fit items-center gap-2 rounded-md bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800"
-          >
-            <Plus className="size-4" aria-hidden="true" />
-            Add Request
-          </button>
+          {userRoleKey !== 'MaintenanceStaff' && (
+            <button
+              type="button"
+              onClick={openCreateModal}
+              className="inline-flex w-fit items-center gap-2 rounded-md bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800"
+            >
+              <Plus className="size-4" aria-hidden="true" />
+              Add Request
+            </button>
+          )}
         </div>
       </section>
 

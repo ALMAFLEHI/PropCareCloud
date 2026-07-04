@@ -1,6 +1,10 @@
 import axios from 'axios'
 import type {
+  AuthUserResponse,
+  DemoCredentialResponse,
   HealthResponse,
+  LoginRequest,
+  LoginResponse,
   MaintenanceRequestCommentResponse,
   MaintenanceRequestCreateRequest,
   MaintenanceRequestResponse,
@@ -10,6 +14,7 @@ import type {
   RentalUnitResponse,
   SystemInfoResponse,
 } from '../types/api'
+import { getToken } from '../utils/authStorage'
 
 const apiBaseUrl =
   import.meta.env.VITE_API_BASE_URL?.trim() || 'http://localhost:5015'
@@ -18,6 +23,45 @@ const propCareApi = axios.create({
   baseURL: apiBaseUrl,
   timeout: 5000,
 })
+
+propCareApi.interceptors.request.use((config) => {
+  const token = getToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+
+  return config
+})
+
+export function setAuthorizationToken(token: string | null) {
+  if (token) {
+    propCareApi.defaults.headers.common.Authorization = `Bearer ${token}`
+    return
+  }
+
+  delete propCareApi.defaults.headers.common.Authorization
+}
+
+export async function login(payload: LoginRequest): Promise<LoginResponse> {
+  const response = await propCareApi.post<LoginResponse>('/api/auth/login', payload)
+  return response.data
+}
+
+export async function getCurrentUser(): Promise<AuthUserResponse> {
+  const response = await propCareApi.get<AuthUserResponse>('/api/auth/me')
+  return response.data
+}
+
+export async function getDemoCredentials(): Promise<DemoCredentialResponse[]> {
+  const response = await propCareApi.get<DemoCredentialResponse[]>(
+    '/api/auth/demo-credentials',
+  )
+  return response.data
+}
+
+export async function ensureDemoAccounts(): Promise<void> {
+  await propCareApi.post('/api/auth/ensure-demo-accounts')
+}
 
 export async function getHealth(): Promise<HealthResponse> {
   const response = await propCareApi.get<HealthResponse>('/api/health')

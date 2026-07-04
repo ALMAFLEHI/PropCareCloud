@@ -13,6 +13,7 @@ public sealed class UserProfile
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
+    public AuthUserAccount? AuthUserAccount { get; set; }
     public ICollection<MaintenanceRequest> TenantRequests { get; set; } = new List<MaintenanceRequest>();
     public ICollection<MaintenanceRequest> AssignedMaintenanceRequests { get; set; } = new List<MaintenanceRequest>();
     public ICollection<MaintenanceRequestComment> Comments { get; set; } = new List<MaintenanceRequestComment>();

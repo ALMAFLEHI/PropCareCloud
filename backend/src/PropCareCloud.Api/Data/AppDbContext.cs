@@ -11,6 +11,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<MaintenanceRequest> MaintenanceRequests => Set<MaintenanceRequest>();
     public DbSet<MaintenanceRequestComment> MaintenanceRequestComments => Set<MaintenanceRequestComment>();
     public DbSet<MaintenanceRequestAttachment> MaintenanceRequestAttachments => Set<MaintenanceRequestAttachment>();
+    public DbSet<AuthUserAccount> AuthUserAccounts => Set<AuthUserAccount>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -22,6 +23,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigureMaintenanceRequest(modelBuilder);
         ConfigureMaintenanceRequestComment(modelBuilder);
         ConfigureMaintenanceRequestAttachment(modelBuilder);
+        ConfigureAuthUserAccount(modelBuilder);
     }
 
     private static void ConfigureUserProfile(ModelBuilder modelBuilder)
@@ -165,6 +167,29 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.HasOne(attachment => attachment.UploadedByUserProfile)
                 .WithMany(user => user.UploadedAttachments)
                 .HasForeignKey(attachment => attachment.UploadedByUserProfileId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private static void ConfigureAuthUserAccount(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<AuthUserAccount>(entity =>
+        {
+            entity.ToTable("auth_user_accounts");
+            entity.HasKey(account => account.Id);
+
+            entity.Property(account => account.UserProfileId).IsRequired();
+            entity.Property(account => account.Email).HasMaxLength(256).IsRequired();
+            entity.Property(account => account.PasswordHash).HasMaxLength(500).IsRequired();
+            entity.Property(account => account.IsActive).IsRequired();
+            entity.Property(account => account.CreatedAtUtc).IsRequired();
+            entity.Property(account => account.LastLoginAtUtc);
+
+            entity.HasIndex(account => account.Email).IsUnique();
+
+            entity.HasOne(account => account.UserProfile)
+                .WithOne(user => user.AuthUserAccount)
+                .HasForeignKey<AuthUserAccount>(account => account.UserProfileId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }

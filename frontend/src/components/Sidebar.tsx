@@ -1,21 +1,49 @@
 import { Building2, LayoutDashboard, UsersRound, Wrench } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import type { UserRoleKey } from '../utils/roles'
 
 type NavigationItem = {
   label: string
   to: string
   icon: LucideIcon
+  roles: UserRoleKey[]
 }
 
 const navigationItems: NavigationItem[] = [
-  { label: 'Dashboard', to: '/', icon: LayoutDashboard },
-  { label: 'Maintenance Requests', to: '/requests', icon: Wrench },
-  { label: 'Properties', to: '/properties', icon: Building2 },
-  { label: 'Users / Roles', to: '/users', icon: UsersRound },
+  {
+    label: 'Dashboard',
+    to: '/',
+    icon: LayoutDashboard,
+    roles: ['AdminOwner', 'PropertyManager', 'Tenant', 'MaintenanceStaff'],
+  },
+  {
+    label: 'Maintenance Requests',
+    to: '/requests',
+    icon: Wrench,
+    roles: ['AdminOwner', 'PropertyManager', 'Tenant', 'MaintenanceStaff'],
+  },
+  {
+    label: 'Properties',
+    to: '/properties',
+    icon: Building2,
+    roles: ['AdminOwner', 'PropertyManager'],
+  },
+  {
+    label: 'Users / Roles',
+    to: '/users',
+    icon: UsersRound,
+    roles: ['AdminOwner'],
+  },
 ]
 
 function Sidebar() {
+  const { userRoleKey } = useAuth()
+  const visibleItems = navigationItems.filter(
+    (item) => userRoleKey && item.roles.includes(userRoleKey),
+  )
+
   return (
     <aside className="border-b border-slate-200 bg-white md:min-h-screen md:w-72 md:border-b-0 md:border-r">
       <div className="flex h-full flex-col gap-5 px-4 py-4 sm:px-6 md:px-5 md:py-6">
@@ -30,7 +58,7 @@ function Sidebar() {
         </div>
 
         <nav className="flex gap-2 overflow-x-auto pb-1 md:flex-col md:overflow-visible md:pb-0">
-          {navigationItems.map((item) => {
+          {visibleItems.map((item) => {
             const Icon = item.icon
 
             return (

@@ -13,6 +13,13 @@ export type SystemInfoResponse = {
 
 export type ApiEnumValue = string | number
 
+export type UserRole =
+  | 'AdminOwner'
+  | 'PropertyManager'
+  | 'Tenant'
+  | 'MaintenanceStaff'
+  | number
+
 export type PropertyResponse = {
   id: string
   name: string
@@ -85,4 +92,33 @@ export type MaintenanceRequestCommentResponse = {
   commentText: string
   isInternal: boolean
   createdAtUtc: string
+}
+
+export type LoginRequest = {
+  email: string
+  password: string
+}
+
+export type AuthUserResponse = {
+  userProfileId: string
+  fullName: string
+  email: string
+  role: UserRole
+  roleDisplayName: string
+  isActive: boolean
+}
+
+export type LoginResponse = {
+  success: boolean
+  message: string
+  token?: string | null
+  expiresAtUtc?: string | null
+  user?: AuthUserResponse | null
+}
+
+export type DemoCredentialResponse = {
+  role: string
+  email: string
+  password: string
+  purpose: string
 }

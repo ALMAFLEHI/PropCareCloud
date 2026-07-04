@@ -158,6 +158,37 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-crud-api.ps1
 
 Authentication and authorization enforcement are still planned for a later sprint.
 
+## Sprint 9 Authentication and Demo Accounts
+
+Sprint 9 adds local/demo authentication for assignment testing.
+
+Auth endpoints:
+
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `GET /api/auth/demo-credentials`
+- `POST /api/auth/ensure-demo-accounts`
+
+Backend auth additions:
+
+- `AuthUserAccount` entity
+- `IAuthService` / `AuthService`
+- `AuthController`
+- JWT bearer authentication
+- BCrypt password hashing for demo accounts
+- EF Core migration: `AddAuthUserAccounts`
+
+Demo credentials:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin / Owner | `admin@propcare.demo` | `PropCare@Admin123` |
+| Property Manager | `manager@propcare.demo` | `PropCare@Manager123` |
+| Tenant | `tenant@propcare.demo` | `PropCare@Tenant123` |
+| Maintenance Staff | `staff@propcare.demo` | `PropCare@Staff123` |
+
+The demo credentials are public assignment/testing accounts. Passwords are stored in the database as BCrypt hashes only. `Jwt:SigningKey` remains empty in committed configuration and uses a local development fallback for the assignment demo only.
+
 ## Notes
 
-Real RDS connectivity, migrations, authentication, authorization rules, and AWS deployment will be added in later sprints. No production secrets, AWS credentials, or real database connection strings are configured in this sprint.
+Real RDS connectivity, AWS Cognito, production password reset, email invitation flow, and AWS deployment will be added in later sprints. No production secrets, AWS credentials, or real database connection strings are configured in this sprint.

@@ -140,3 +140,29 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
 ```
 
 Authentication, authorization enforcement, production-ready user lookup, Amazon RDS cloud connectivity, and AWS deployment remain deferred to later sprints.
+
+## Sprint 9 Authentication and Role-Based Dashboards
+
+- Demo JWT authentication added for assignment testing.
+- Demo accounts are available for Admin / Owner, Property Manager, Tenant, and Maintenance Staff roles.
+- Frontend login route: `/login`.
+- Main frontend routes are protected and redirect unauthenticated users to `/login`.
+- Dashboard and sidebar navigation adapt by signed-in role.
+- Demo passwords are stored in the database as BCrypt hashes, not plaintext.
+
+Demo credentials:
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin / Owner | `admin@propcare.demo` | `PropCare@Admin123` |
+| Property Manager | `manager@propcare.demo` | `PropCare@Manager123` |
+| Tenant | `tenant@propcare.demo` | `PropCare@Tenant123` |
+| Maintenance Staff | `staff@propcare.demo` | `PropCare@Staff123` |
+
+Validation command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
+```
+
+AWS Cognito, production password reset, email invitation flow, Amazon RDS cloud connectivity, and cloud deployment remain deferred to later sprints.
