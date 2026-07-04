@@ -235,3 +235,25 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
 - Sprint 9.3 tenant request/unit consistency is complete.
 - Manual evidence screenshots were captured and saved under `docs/sprints/screenshots/`.
 - Next sprint: Sprint 10 Admin User & Access Management.
+
+## Sprint 10 Admin User & Access Management
+
+- Admin User & Access Management module added.
+- Admin / Owner can list user accounts and filter by role/status.
+- Admin / Owner can create internal Property Manager and Maintenance Staff accounts.
+- Admin / Owner can edit profile names, disable/reactivate accounts, and reset passwords.
+- Disabled accounts cannot log in.
+- Admin / Owner can view tenant-unit assignments and assign tenants to available units.
+- One rental unit cannot have two active tenant assignments.
+- Tenant onboarding remains deferred to a future invitation/register flow.
+- No AWS Cognito, email sending, cloud deployment, or real secrets were added.
+
+Validation commands:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
+```
+
+Next sprint: Workflow UX Enhancements.

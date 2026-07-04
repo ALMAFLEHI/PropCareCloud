@@ -31,7 +31,7 @@ const navigationItems: NavigationItem[] = [
     roles: ['AdminOwner', 'PropertyManager'],
   },
   {
-    label: 'Users / Roles',
+    label: 'Access Management',
     to: '/users',
     icon: UsersRound,
     roles: ['AdminOwner'],

@@ -99,6 +99,7 @@ if (isDatabaseConfigured)
     builder.Services.AddScoped<IPropertyService, PropertyService>();
     builder.Services.AddScoped<IMaintenanceRequestService, MaintenanceRequestService>();
     builder.Services.AddScoped<IAuthService, AuthService>();
+    builder.Services.AddScoped<IUserManagementService, UserManagementService>();
 }
 builder.Services.AddCors(options =>
 {

@@ -144,6 +144,30 @@ Manual validation expectations after the backend fix:
 - Imran Tenant requests: `Air conditioner not cooling` and `Bathroom light flickering`.
 - The tenant create request dropdown should show only the signed-in tenant's assigned units.
 
+## Sprint 10 Access Management
+
+The admin-only `/users` route is now an Access Management console.
+
+- Sidebar label changed to `Access Management`.
+- Admin / Owner can view user accounts and filter by role/status.
+- Admin / Owner can create Property Manager and Maintenance Staff accounts.
+- Admin / Owner can edit profile names, disable/reactivate accounts, and reset passwords.
+- Admin / Owner can view tenant-unit assignments and assign tenants to available units.
+- Non-admin users are blocked from the page and the backend still enforces `AdminOnly`.
+- The page no longer uses prototype sprint-explanation content as the main UI.
+
+Sprint 10 API calls:
+
+- `GET /api/admin/users`
+- `POST /api/admin/users/internal`
+- `PUT /api/admin/users/{userProfileId}/profile`
+- `PATCH /api/admin/users/{userProfileId}/status`
+- `PATCH /api/admin/users/{userProfileId}/password`
+- `GET /api/admin/users/tenant-assignments`
+- `POST /api/admin/users/tenant-assignments`
+- `PATCH /api/admin/users/tenant-assignments/{assignmentId}/end`
+- `GET /api/admin/users/available-units`
+
 ## Validation
 
 From the project root:

@@ -81,10 +81,27 @@ public sealed class AuthService(
             .Include(authUser => authUser.UserProfile)
             .SingleOrDefaultAsync(authUser => authUser.Email.ToLower() == normalizedEmail);
 
-        if (account?.UserProfile is null ||
-            !account.IsActive ||
-            !account.UserProfile.IsActive ||
-            !BCrypt.Net.BCrypt.Verify(request.Password, account.PasswordHash))
+        if (account?.UserProfile is null)
+        {
+            return new LoginResponse(
+                Success: false,
+                Message: "Invalid email or password.",
+                Token: null,
+                ExpiresAtUtc: null,
+                User: null);
+        }
+
+        if (!account.IsActive || !account.UserProfile.IsActive)
+        {
+            return new LoginResponse(
+                Success: false,
+                Message: "Account is disabled. Contact an administrator.",
+                Token: null,
+                ExpiresAtUtc: null,
+                User: null);
+        }
+
+        if (!BCrypt.Net.BCrypt.Verify(request.Password, account.PasswordHash))
         {
             return new LoginResponse(
                 Success: false,

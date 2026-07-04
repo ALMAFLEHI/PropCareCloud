@@ -2,7 +2,11 @@ import axios from 'axios'
 import type {
   AssignedUnitResponse,
   AuthUserResponse,
+  AvailableUnitResponse,
+  CreateInternalUserRequest,
+  CreateTenantUnitAssignmentRequest,
   DemoCredentialResponse,
+  EndTenantUnitAssignmentRequest,
   HealthResponse,
   LoginRequest,
   LoginResponse,
@@ -14,7 +18,14 @@ import type {
   PropertyCreateRequest,
   PropertyResponse,
   RentalUnitResponse,
+  ResetUserPasswordRequest,
   SystemInfoResponse,
+  TenantUnitAssignmentResponse,
+  UpdateAccountStatusRequest,
+  UpdateUserProfileRequest,
+  UserAccountDetailResponse,
+  UserAccountSummaryResponse,
+  UserRole,
   UserProfileSummaryResponse,
 } from '../types/api'
 import { getToken } from '../utils/authStorage'
@@ -181,6 +192,103 @@ export async function getTenants(): Promise<UserProfileSummaryResponse[]> {
 export async function getMyAssignedUnits(): Promise<AssignedUnitResponse[]> {
   const response = await propCareApi.get<AssignedUnitResponse[]>(
     '/api/user-profiles/me/assigned-units',
+  )
+  return response.data
+}
+
+export async function getAdminUsers(filters?: {
+  role?: UserRole | ''
+  isActive?: boolean | ''
+}): Promise<UserAccountSummaryResponse[]> {
+  const response = await propCareApi.get<UserAccountSummaryResponse[]>(
+    '/api/admin/users',
+    {
+      params: {
+        role: filters?.role || undefined,
+        isActive:
+          typeof filters?.isActive === 'boolean' ? filters.isActive : undefined,
+      },
+    },
+  )
+  return response.data
+}
+
+export async function getAdminUserByProfileId(
+  userProfileId: string,
+): Promise<UserAccountDetailResponse> {
+  const response = await propCareApi.get<UserAccountDetailResponse>(
+    `/api/admin/users/${userProfileId}`,
+  )
+  return response.data
+}
+
+export async function createInternalUser(
+  payload: CreateInternalUserRequest,
+): Promise<UserAccountSummaryResponse> {
+  const response = await propCareApi.post<UserAccountSummaryResponse>(
+    '/api/admin/users/internal',
+    payload,
+  )
+  return response.data
+}
+
+export async function updateUserProfile(
+  userProfileId: string,
+  payload: UpdateUserProfileRequest,
+): Promise<UserAccountSummaryResponse> {
+  const response = await propCareApi.put<UserAccountSummaryResponse>(
+    `/api/admin/users/${userProfileId}/profile`,
+    payload,
+  )
+  return response.data
+}
+
+export async function updateAccountStatus(
+  userProfileId: string,
+  payload: UpdateAccountStatusRequest,
+): Promise<void> {
+  await propCareApi.patch(`/api/admin/users/${userProfileId}/status`, payload)
+}
+
+export async function resetUserPassword(
+  userProfileId: string,
+  payload: ResetUserPasswordRequest,
+): Promise<void> {
+  await propCareApi.patch(`/api/admin/users/${userProfileId}/password`, payload)
+}
+
+export async function getTenantUnitAssignments(): Promise<
+  TenantUnitAssignmentResponse[]
+> {
+  const response = await propCareApi.get<TenantUnitAssignmentResponse[]>(
+    '/api/admin/users/tenant-assignments',
+  )
+  return response.data
+}
+
+export async function assignTenantToUnit(
+  payload: CreateTenantUnitAssignmentRequest,
+): Promise<TenantUnitAssignmentResponse> {
+  const response = await propCareApi.post<TenantUnitAssignmentResponse>(
+    '/api/admin/users/tenant-assignments',
+    payload,
+  )
+  return response.data
+}
+
+export async function endTenantUnitAssignment(
+  assignmentId: string,
+  payload: EndTenantUnitAssignmentRequest,
+): Promise<void> {
+  await propCareApi.patch(
+    `/api/admin/users/tenant-assignments/${assignmentId}/end`,
+    payload,
+  )
+}
+
+export async function getAvailableUnits(): Promise<AvailableUnitResponse[]> {
+  const response = await propCareApi.get<AvailableUnitResponse[]>(
+    '/api/admin/users/available-units',
   )
   return response.data
 }

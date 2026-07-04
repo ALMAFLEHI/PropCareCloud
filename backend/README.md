@@ -253,6 +253,40 @@ Sprint 9.3 fixes the remaining demo data mismatch between tenant assigned units 
 - No new migration was required because the Sprint 9.2 schema already supports multiple active units per tenant.
 - No real secrets, database passwords, AWS keys, or production JWT secrets are committed.
 
+## Sprint 10 Admin User and Access Management
+
+Sprint 10 adds admin-only account and access management.
+
+Admin endpoints:
+
+- `GET /api/admin/users`
+- `GET /api/admin/users/{userProfileId}`
+- `POST /api/admin/users/internal`
+- `PUT /api/admin/users/{userProfileId}/profile`
+- `PATCH /api/admin/users/{userProfileId}/status`
+- `PATCH /api/admin/users/{userProfileId}/password`
+- `GET /api/admin/users/tenant-assignments`
+- `POST /api/admin/users/tenant-assignments`
+- `PATCH /api/admin/users/tenant-assignments/{assignmentId}/end`
+- `GET /api/admin/users/available-units`
+
+Account rules:
+
+- Only Admin / Owner can access these endpoints.
+- Internal account creation is limited to Property Manager and Maintenance Staff.
+- Passwords are stored as BCrypt hashes only.
+- Disabled accounts cannot log in.
+- An admin cannot disable their own account.
+- The last active Admin / Owner account cannot be disabled.
+
+Tenant assignment rules:
+
+- Tenant assignments require a Tenant profile and existing rental unit.
+- One rental unit can have only one active tenant assignment.
+- One tenant can have multiple active unit assignments.
+- Ending an assignment keeps historical data and makes the unit available again.
+- No real secrets, password hashes, or connection strings are exposed by these endpoints.
+
 ## Notes
 
 Real RDS connectivity, AWS Cognito, production password reset, email invitation flow, and AWS deployment will be added in later sprints. No production secrets, AWS credentials, or real database connection strings are configured in this sprint.

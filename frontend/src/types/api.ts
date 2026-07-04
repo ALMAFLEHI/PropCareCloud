@@ -146,3 +146,84 @@ export type AssignedUnitResponse = {
   status: ApiEnumValue
   leaseStartDateUtc: string
 }
+
+export type UserAccountSummaryResponse = {
+  authUserAccountId: string
+  userProfileId: string
+  fullName: string
+  email: string
+  role: UserRole
+  roleDisplayName: string
+  isActive: boolean
+  createdAtUtc: string
+  lastLoginAtUtc?: string | null
+  activeUnitCount: number
+  requestCount: number
+}
+
+export type UserAccountDetailResponse = {
+  authUserAccountId: string
+  userProfileId: string
+  fullName: string
+  email: string
+  role: UserRole
+  roleDisplayName: string
+  isActive: boolean
+  createdAtUtc: string
+  lastLoginAtUtc?: string | null
+  activeTenantUnits: TenantUnitAssignmentResponse[]
+  assignedStaffRequestCount: number
+  tenantRequestCount: number
+}
+
+export type CreateInternalUserRequest = {
+  fullName: string
+  email: string
+  password: string
+  role: UserRole
+}
+
+export type UpdateUserProfileRequest = {
+  fullName: string
+}
+
+export type UpdateAccountStatusRequest = {
+  isActive: boolean
+}
+
+export type ResetUserPasswordRequest = {
+  newPassword: string
+}
+
+export type TenantUnitAssignmentResponse = {
+  assignmentId: string
+  tenantProfileId: string
+  tenantName: string
+  rentalUnitId: string
+  unitNumber: string
+  propertyName: string
+  isActive: boolean
+  leaseStartDateUtc: string
+  leaseEndDateUtc?: string | null
+}
+
+export type CreateTenantUnitAssignmentRequest = {
+  tenantProfileId: string
+  rentalUnitId: string
+  leaseStartDateUtc?: string | null
+}
+
+export type EndTenantUnitAssignmentRequest = {
+  leaseEndDateUtc?: string | null
+  reason?: string | null
+}
+
+export type AvailableUnitResponse = {
+  rentalUnitId: string
+  propertyId: string
+  propertyName: string
+  unitNumber: string
+  floor?: string | null
+  bedrooms?: number | null
+  status: ApiEnumValue
+}
