@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PropCareCloud.Api.Domain.Enums;
 using PropCareCloud.Api.DTOs.MaintenanceRequests;
@@ -6,12 +7,14 @@ using PropCareCloud.Api.Services;
 namespace PropCareCloud.Api.Controllers;
 
 /// <summary>
-/// Maintenance request workflow endpoints. Authentication and authorization will be added later.
+/// Maintenance request workflow endpoints protected by role-based access control.
 /// </summary>
 [ApiController]
+[Authorize(Policy = "AllRoles")]
 [Route("api/maintenance-requests")]
 public sealed class MaintenanceRequestsController(
-    IMaintenanceRequestService maintenanceRequestService) : ControllerBase
+    IMaintenanceRequestService maintenanceRequestService,
+    ICurrentUserService currentUser) : ControllerBase
 {
     [HttpGet]
     public async Task<ActionResult<List<MaintenanceRequestResponse>>> GetRequests(
@@ -29,6 +32,11 @@ public sealed class MaintenanceRequestsController(
         var request = await maintenanceRequestService.GetRequestByIdAsync(id);
         if (request is null)
         {
+            if (await maintenanceRequestService.RequestExistsAsync(id))
+            {
+                return Forbid();
+            }
+
             return NotFound();
         }
 
@@ -39,19 +47,27 @@ public sealed class MaintenanceRequestsController(
     public async Task<ActionResult<MaintenanceRequestResponse>> CreateRequest(
         MaintenanceRequestCreateRequest request)
     {
+        if (currentUser.IsMaintenanceStaff)
+        {
+            return Forbid();
+        }
+
         var created = await maintenanceRequestService.CreateRequestAsync(request);
         if (created is null)
         {
-            return BadRequest(new
-            {
-                message = "Rental unit must exist and tenant profile must have the Tenant role."
-            });
+            return currentUser.IsTenant
+                ? Forbid()
+                : BadRequest(new
+                {
+                    message = "Rental unit must exist and tenant profile must have the Tenant role."
+                });
         }
 
         return CreatedAtAction(nameof(GetRequest), new { id = created.Id }, created);
     }
 
     [HttpPut("{id:guid}")]
+    [Authorize(Policy = "AdminOrManager")]
     public async Task<ActionResult<MaintenanceRequestResponse>> UpdateRequest(
         Guid id,
         MaintenanceRequestUpdateRequest request)
@@ -66,6 +82,7 @@ public sealed class MaintenanceRequestsController(
     }
 
     [HttpPatch("{id:guid}/assign")]
+    [Authorize(Policy = "AdminOrManager")]
     public async Task<ActionResult<MaintenanceRequestResponse>> AssignRequest(
         Guid id,
         MaintenanceRequestAssignRequest request)
@@ -73,6 +90,11 @@ public sealed class MaintenanceRequestsController(
         var existing = await maintenanceRequestService.GetRequestByIdAsync(id);
         if (existing is null)
         {
+            if (await maintenanceRequestService.RequestExistsAsync(id))
+            {
+                return Forbid();
+            }
+
             return NotFound();
         }
 
@@ -96,6 +118,11 @@ public sealed class MaintenanceRequestsController(
         var updated = await maintenanceRequestService.UpdateStatusAsync(id, request);
         if (updated is null)
         {
+            if (await maintenanceRequestService.RequestExistsAsync(id))
+            {
+                return Forbid();
+            }
+
             return NotFound();
         }
 
@@ -103,11 +130,17 @@ public sealed class MaintenanceRequestsController(
     }
 
     [HttpDelete("{id:guid}")]
+    [Authorize(Policy = "AdminOrManager")]
     public async Task<IActionResult> DeleteRequest(Guid id)
     {
         var existing = await maintenanceRequestService.GetRequestByIdAsync(id);
         if (existing is null)
         {
+            if (await maintenanceRequestService.RequestExistsAsync(id))
+            {
+                return Forbid();
+            }
+
             return NotFound();
         }
 
@@ -129,6 +162,11 @@ public sealed class MaintenanceRequestsController(
         var existing = await maintenanceRequestService.GetRequestByIdAsync(id);
         if (existing is null)
         {
+            if (await maintenanceRequestService.RequestExistsAsync(id))
+            {
+                return Forbid();
+            }
+
             return NotFound();
         }
 
@@ -145,6 +183,11 @@ public sealed class MaintenanceRequestsController(
         var existing = await maintenanceRequestService.GetRequestByIdAsync(id);
         if (existing is null)
         {
+            if (await maintenanceRequestService.RequestExistsAsync(id))
+            {
+                return Forbid();
+            }
+
             return NotFound();
         }
 

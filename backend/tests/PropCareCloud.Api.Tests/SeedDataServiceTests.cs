@@ -34,6 +34,7 @@ public sealed class SeedDataServiceTests
             Assert.Equal(6, await dbContext.UserProfiles.CountAsync());
             Assert.Equal(2, await dbContext.Properties.CountAsync());
             Assert.Equal(4, await dbContext.RentalUnits.CountAsync());
+            Assert.Equal(3, await dbContext.TenantUnitAssignments.CountAsync());
             Assert.Equal(4, await dbContext.MaintenanceRequests.CountAsync());
             Assert.Equal(4, await dbContext.MaintenanceRequestComments.CountAsync());
             Assert.Equal(1, await dbContext.MaintenanceRequestAttachments.CountAsync());
@@ -73,6 +74,7 @@ public sealed class SeedDataServiceTests
             Assert.Equal(0, result.CommentsCreated);
             Assert.Equal(0, result.AttachmentsCreated);
             Assert.Equal(6, await dbContext.UserProfiles.CountAsync());
+            Assert.Equal(3, await dbContext.TenantUnitAssignments.CountAsync());
             Assert.Equal(4, await dbContext.MaintenanceRequests.CountAsync());
         }
     }

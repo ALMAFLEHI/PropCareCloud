@@ -35,6 +35,7 @@ public sealed class SeedDataService(AppDbContext dbContext) : ISeedDataService
         var users = CreateUsers(timestampUtc);
         var properties = CreateProperties(timestampUtc);
         var units = CreateUnits(properties, timestampUtc);
+        var tenantUnitAssignments = CreateTenantUnitAssignments(users, units, timestampUtc);
         var requests = CreateMaintenanceRequests(users, units, timestampUtc);
         var comments = CreateComments(users, requests, timestampUtc);
         var attachments = CreateAttachments(users, requests, timestampUtc);
@@ -42,6 +43,7 @@ public sealed class SeedDataService(AppDbContext dbContext) : ISeedDataService
         await dbContext.UserProfiles.AddRangeAsync(users, cancellationToken);
         await dbContext.Properties.AddRangeAsync(properties, cancellationToken);
         await dbContext.RentalUnits.AddRangeAsync(units, cancellationToken);
+        await dbContext.TenantUnitAssignments.AddRangeAsync(tenantUnitAssignments, cancellationToken);
         await dbContext.MaintenanceRequests.AddRangeAsync(requests, cancellationToken);
         await dbContext.MaintenanceRequestComments.AddRangeAsync(comments, cancellationToken);
         await dbContext.MaintenanceRequestAttachments.AddRangeAsync(attachments, cancellationToken);
@@ -260,6 +262,49 @@ public sealed class SeedDataService(AppDbContext dbContext) : ISeedDataService
                 Priority = MaintenancePriority.Medium,
                 Status = MaintenanceStatus.Submitted,
                 CreatedAtUtc = timestampUtc.AddDays(-1)
+            }
+        ];
+    }
+
+    private static List<TenantUnitAssignment> CreateTenantUnitAssignments(
+        IReadOnlyList<UserProfile> users,
+        IReadOnlyList<RentalUnit> units,
+        DateTime timestampUtc)
+    {
+        var tenantOne = users.Single(user => user.Email == "tenant1@example.com");
+        var tenantTwo = users.Single(user => user.Email == "tenant2@example.com");
+
+        return
+        [
+            new()
+            {
+                TenantProfileId = tenantOne.Id,
+                TenantProfile = tenantOne,
+                RentalUnitId = units[0].Id,
+                RentalUnit = units[0],
+                LeaseStartDateUtc = timestampUtc.AddMonths(-8),
+                IsActive = true,
+                CreatedAtUtc = timestampUtc
+            },
+            new()
+            {
+                TenantProfileId = tenantOne.Id,
+                TenantProfile = tenantOne,
+                RentalUnitId = units[2].Id,
+                RentalUnit = units[2],
+                LeaseStartDateUtc = timestampUtc.AddMonths(-4),
+                IsActive = true,
+                CreatedAtUtc = timestampUtc
+            },
+            new()
+            {
+                TenantProfileId = tenantTwo.Id,
+                TenantProfile = tenantTwo,
+                RentalUnitId = units[1].Id,
+                RentalUnit = units[1],
+                LeaseStartDateUtc = timestampUtc.AddMonths(-5),
+                IsActive = true,
+                CreatedAtUtc = timestampUtc
             }
         ];
     }

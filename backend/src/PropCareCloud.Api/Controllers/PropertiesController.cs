@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PropCareCloud.Api.DTOs.Properties;
 using PropCareCloud.Api.Services;
@@ -5,9 +6,10 @@ using PropCareCloud.Api.Services;
 namespace PropCareCloud.Api.Controllers;
 
 /// <summary>
-/// Property and rental unit management endpoints. Authentication and authorization will be added later.
+/// Property and rental unit management endpoints for admin and property manager roles.
 /// </summary>
 [ApiController]
+[Authorize(Policy = "AdminOrManager")]
 [Route("api/properties")]
 public sealed class PropertiesController(IPropertyService propertyService) : ControllerBase
 {

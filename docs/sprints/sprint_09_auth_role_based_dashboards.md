@@ -84,7 +84,23 @@ These are demo assignment accounts only. Backend storage uses BCrypt password ha
 - Tenant: request submission and tracking view.
 - Maintenance Staff: assigned work queue and status update focus.
 
-The current Sprint 9 UI is role-specific, but strict production authorization policies for every business action are intentionally deferred.
+The initial Sprint 9 UI was role-specific, but strict backend authorization and request filtering were completed in Sprint 9.1.
+
+## Sprint 9.1 Completion Update
+
+Sprint 9.1 fixes the Sprint 9 partial status by adding real backend role-based access control and data filtering.
+
+- Tenant request lists now return only the signed-in tenant's own requests.
+- Maintenance staff request lists now return only jobs assigned to the signed-in staff profile.
+- Admin / Owner and Property Manager can view all demo maintenance requests.
+- Tenants can create maintenance requests only for active assigned units.
+- Tenants cannot update request status or access property management endpoints.
+- Maintenance staff cannot create tenant requests or assign jobs.
+- Maintenance staff can update only assigned jobs to `InProgress` or `Completed`.
+- Property and rental unit management endpoints require Admin / Owner or Property Manager.
+- Frontend dashboard and request page controls now match the backend role rules.
+
+See `docs/sprints/sprint_09_1_role_based_access_control.md` for the detailed Sprint 9.1 closure record.
 
 ## Commands and Checks Performed
 
@@ -152,4 +168,4 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
 
 ## Final Status
 
-PARTIAL: backend tests, frontend build, and full-stack validation passed. Local login and role dashboard manual validation still require the local PostgreSQL connection string to be configured through user-secrets or an environment variable.
+Sprint 9 initial authentication and role dashboard work was PARTIAL until Sprint 9.1. Sprint 9.1 is COMPLETE for backend RBAC/data filtering code and automated validation; final Sprint 9 evidence closure still requires manual role screenshots.

@@ -156,7 +156,7 @@ Validation command:
 powershell -ExecutionPolicy Bypass -File .\scripts\check-crud-api.ps1
 ```
 
-Authentication and authorization enforcement are still planned for a later sprint.
+Authentication and authorization enforcement were added in Sprint 9 and Sprint 9.1.
 
 ## Sprint 9 Authentication and Demo Accounts
 
@@ -188,6 +188,32 @@ Demo credentials:
 | Maintenance Staff | `staff@propcare.demo` | `PropCare@Staff123` |
 
 The demo credentials are public assignment/testing accounts. Passwords are stored in the database as BCrypt hashes only. `Jwt:SigningKey` remains empty in committed configuration and uses a local development fallback for the assignment demo only.
+
+## Sprint 9.1 Role-Based API Enforcement
+
+Sprint 9.1 adds real backend role-based access control and data filtering.
+
+RBAC additions:
+
+- `ICurrentUserService` reads `userProfileId`, email, and role claims from the JWT.
+- Authorization policies: `AdminOnly`, `AdminOrManager`, `AdminManagerOrStaff`, `AllRoles`.
+- `TenantUnitAssignment` entity and `AddTenantUnitAssignments` migration.
+- Demo tenant unit assignment setup without duplicate assignments.
+
+API rules:
+
+- Admin / Owner: full demo portfolio access.
+- Property Manager: properties/units and all maintenance requests; no admin users/roles page.
+- Tenant: own maintenance requests only; create request only for assigned active unit; no property management or status updates.
+- Maintenance Staff: assigned requests only; update assigned work only to `InProgress` or `Completed`; no request creation or assignment.
+
+Role-aware helper endpoints:
+
+- `GET /api/user-profiles/maintenance-staff` - Admin / Owner and Property Manager.
+- `GET /api/user-profiles/tenants` - Admin / Owner and Property Manager.
+- `GET /api/user-profiles/me/assigned-units` - Tenant only.
+
+No password hashes, real database passwords, AWS keys, or production JWT secrets are exposed by these endpoints.
 
 ## Notes
 

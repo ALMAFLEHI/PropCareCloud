@@ -12,6 +12,7 @@ public interface IMaintenanceRequestService
         MaintenanceStatus? status = null,
         MaintenancePriority? priority = null);
     Task<MaintenanceRequestResponse?> GetRequestByIdAsync(Guid id);
+    Task<bool> RequestExistsAsync(Guid id);
     Task<MaintenanceRequestResponse?> CreateRequestAsync(MaintenanceRequestCreateRequest request);
     Task<MaintenanceRequestResponse?> UpdateRequestAsync(Guid id, MaintenanceRequestUpdateRequest request);
     Task<MaintenanceRequestResponse?> AssignRequestAsync(Guid id, MaintenanceRequestAssignRequest request);
@@ -23,13 +24,15 @@ public interface IMaintenanceRequestService
     Task<List<MaintenanceRequestCommentResponse>> GetCommentsAsync(Guid requestId);
 }
 
-public sealed class MaintenanceRequestService(AppDbContext dbContext) : IMaintenanceRequestService
+public sealed class MaintenanceRequestService(
+    AppDbContext dbContext,
+    ICurrentUserService currentUser) : IMaintenanceRequestService
 {
     public async Task<List<MaintenanceRequestResponse>> GetRequestsAsync(
         MaintenanceStatus? status = null,
         MaintenancePriority? priority = null)
     {
-        var query = dbContext.MaintenanceRequests.AsNoTracking();
+        var query = ApplyRoleFilter(dbContext.MaintenanceRequests.AsNoTracking());
 
         if (status.HasValue)
         {
@@ -48,23 +51,49 @@ public sealed class MaintenanceRequestService(AppDbContext dbContext) : IMainten
 
     public async Task<MaintenanceRequestResponse?> GetRequestByIdAsync(Guid id)
     {
-        return await ProjectRequest(dbContext.MaintenanceRequests.AsNoTracking()
+        return await ProjectRequest(ApplyRoleFilter(dbContext.MaintenanceRequests.AsNoTracking())
                 .Where(request => request.Id == id))
             .SingleOrDefaultAsync();
     }
 
+    public async Task<bool> RequestExistsAsync(Guid id)
+    {
+        return await dbContext.MaintenanceRequests.AnyAsync(request => request.Id == id);
+    }
+
     public async Task<MaintenanceRequestResponse?> CreateRequestAsync(MaintenanceRequestCreateRequest request)
     {
-        var rentalUnitExists = await dbContext.RentalUnits
-            .AnyAsync(unit => unit.Id == request.RentalUnitId);
-        if (!rentalUnitExists)
+        if (!currentUser.HasRole(UserRole.AdminOwner, UserRole.PropertyManager, UserRole.Tenant))
+        {
+            return null;
+        }
+
+        var tenantProfileId = currentUser.IsTenant
+            ? currentUser.UserProfileId
+            : request.TenantProfileId;
+        if (tenantProfileId is null)
+        {
+            return null;
+        }
+
+        var rentalUnit = await dbContext.RentalUnits
+            .SingleOrDefaultAsync(unit => unit.Id == request.RentalUnitId);
+        if (rentalUnit is null)
         {
             return null;
         }
 
         var tenantExists = await dbContext.UserProfiles
-            .AnyAsync(user => user.Id == request.TenantProfileId && user.Role == UserRole.Tenant);
+            .AnyAsync(user => user.Id == tenantProfileId.Value &&
+                              user.Role == UserRole.Tenant &&
+                              user.IsActive);
         if (!tenantExists)
+        {
+            return null;
+        }
+
+        if (currentUser.IsTenant &&
+            !await TenantCanCreateForUnitAsync(tenantProfileId.Value, rentalUnit.Id))
         {
             return null;
         }
@@ -72,7 +101,7 @@ public sealed class MaintenanceRequestService(AppDbContext dbContext) : IMainten
         var maintenanceRequest = new MaintenanceRequest
         {
             RentalUnitId = request.RentalUnitId,
-            TenantProfileId = request.TenantProfileId,
+            TenantProfileId = tenantProfileId.Value,
             Title = request.Title.Trim(),
             Description = request.Description.Trim(),
             Category = request.Category,
@@ -91,6 +120,11 @@ public sealed class MaintenanceRequestService(AppDbContext dbContext) : IMainten
         Guid id,
         MaintenanceRequestUpdateRequest request)
     {
+        if (!currentUser.HasRole(UserRole.AdminOwner, UserRole.PropertyManager))
+        {
+            return null;
+        }
+
         var maintenanceRequest = await dbContext.MaintenanceRequests.FindAsync(id);
         if (maintenanceRequest is null)
         {
@@ -112,6 +146,11 @@ public sealed class MaintenanceRequestService(AppDbContext dbContext) : IMainten
         Guid id,
         MaintenanceRequestAssignRequest request)
     {
+        if (!currentUser.HasRole(UserRole.AdminOwner, UserRole.PropertyManager))
+        {
+            return null;
+        }
+
         var maintenanceRequest = await dbContext.MaintenanceRequests.FindAsync(id);
         if (maintenanceRequest is null)
         {
@@ -120,7 +159,8 @@ public sealed class MaintenanceRequestService(AppDbContext dbContext) : IMainten
 
         var staffExists = await dbContext.UserProfiles
             .AnyAsync(user => user.Id == request.AssignedStaffProfileId &&
-                              user.Role == UserRole.MaintenanceStaff);
+                              user.Role == UserRole.MaintenanceStaff &&
+                              user.IsActive);
         if (!staffExists)
         {
             return null;
@@ -143,7 +183,7 @@ public sealed class MaintenanceRequestService(AppDbContext dbContext) : IMainten
         MaintenanceRequestStatusUpdateRequest request)
     {
         var maintenanceRequest = await dbContext.MaintenanceRequests.FindAsync(id);
-        if (maintenanceRequest is null)
+        if (maintenanceRequest is null || !CanUpdateStatus(maintenanceRequest, request.Status))
         {
             return null;
         }
@@ -157,6 +197,11 @@ public sealed class MaintenanceRequestService(AppDbContext dbContext) : IMainten
 
     public async Task<bool> DeleteRequestAsync(Guid id)
     {
+        if (!currentUser.HasRole(UserRole.AdminOwner, UserRole.PropertyManager))
+        {
+            return false;
+        }
+
         var maintenanceRequest = await dbContext.MaintenanceRequests.FindAsync(id);
         if (maintenanceRequest is null)
         {
@@ -182,11 +227,20 @@ public sealed class MaintenanceRequestService(AppDbContext dbContext) : IMainten
         Guid requestId,
         MaintenanceRequestCommentCreateRequest request)
     {
-        var requestExists = await dbContext.MaintenanceRequests
-            .AnyAsync(maintenanceRequest => maintenanceRequest.Id == requestId);
+        var visibleRequest = await GetRequestByIdAsync(requestId);
+        if (visibleRequest is null || currentUser.UserProfileId is not { } userProfileId)
+        {
+            return null;
+        }
+
+        if (request.IsInternal && currentUser.IsTenant)
+        {
+            return null;
+        }
+
         var user = await dbContext.UserProfiles
-            .SingleOrDefaultAsync(userProfile => userProfile.Id == request.UserProfileId);
-        if (!requestExists || user is null)
+            .SingleOrDefaultAsync(userProfile => userProfile.Id == userProfileId);
+        if (user is null)
         {
             return null;
         }
@@ -194,9 +248,9 @@ public sealed class MaintenanceRequestService(AppDbContext dbContext) : IMainten
         var comment = new MaintenanceRequestComment
         {
             MaintenanceRequestId = requestId,
-            UserProfileId = request.UserProfileId,
+            UserProfileId = userProfileId,
             CommentText = request.CommentText.Trim(),
-            IsInternal = request.IsInternal,
+            IsInternal = request.IsInternal && currentUser.HasRole(UserRole.AdminOwner, UserRole.PropertyManager),
             CreatedAtUtc = DateTime.UtcNow
         };
 
@@ -222,9 +276,22 @@ public sealed class MaintenanceRequestService(AppDbContext dbContext) : IMainten
 
     public async Task<List<MaintenanceRequestCommentResponse>> GetCommentsAsync(Guid requestId)
     {
-        return await dbContext.MaintenanceRequestComments
+        var visibleRequest = await GetRequestByIdAsync(requestId);
+        if (visibleRequest is null)
+        {
+            return [];
+        }
+
+        var query = dbContext.MaintenanceRequestComments
             .AsNoTracking()
-            .Where(comment => comment.MaintenanceRequestId == requestId)
+            .Where(comment => comment.MaintenanceRequestId == requestId);
+
+        if (currentUser.IsTenant)
+        {
+            query = query.Where(comment => !comment.IsInternal);
+        }
+
+        return await query
             .OrderBy(comment => comment.CreatedAtUtc)
             .Select(comment => new MaintenanceRequestCommentResponse(
                 comment.Id,
@@ -235,6 +302,56 @@ public sealed class MaintenanceRequestService(AppDbContext dbContext) : IMainten
                 comment.IsInternal,
                 comment.CreatedAtUtc))
             .ToListAsync();
+    }
+
+    private IQueryable<MaintenanceRequest> ApplyRoleFilter(IQueryable<MaintenanceRequest> query)
+    {
+        if (currentUser.HasRole(UserRole.AdminOwner, UserRole.PropertyManager))
+        {
+            return query;
+        }
+
+        if (currentUser.IsTenant && currentUser.UserProfileId is { } tenantProfileId)
+        {
+            return query.Where(request => request.TenantProfileId == tenantProfileId);
+        }
+
+        if (currentUser.IsMaintenanceStaff && currentUser.UserProfileId is { } staffProfileId)
+        {
+            return query.Where(request => request.AssignedStaffProfileId == staffProfileId);
+        }
+
+        return query.Where(_ => false);
+    }
+
+    private async Task<bool> TenantCanCreateForUnitAsync(Guid tenantProfileId, Guid rentalUnitId)
+    {
+        return await dbContext.TenantUnitAssignments
+            .Include(assignment => assignment.RentalUnit)
+            .AnyAsync(assignment =>
+                assignment.TenantProfileId == tenantProfileId &&
+                assignment.RentalUnitId == rentalUnitId &&
+                assignment.IsActive &&
+                assignment.LeaseEndDateUtc == null &&
+                assignment.RentalUnit != null &&
+                assignment.RentalUnit.Status == UnitStatus.Occupied);
+    }
+
+    private bool CanUpdateStatus(MaintenanceRequest maintenanceRequest, MaintenanceStatus status)
+    {
+        if (currentUser.HasRole(UserRole.AdminOwner, UserRole.PropertyManager))
+        {
+            return true;
+        }
+
+        if (!currentUser.IsMaintenanceStaff ||
+            currentUser.UserProfileId is not { } staffProfileId ||
+            maintenanceRequest.AssignedStaffProfileId != staffProfileId)
+        {
+            return false;
+        }
+
+        return status is MaintenanceStatus.InProgress or MaintenanceStatus.Completed;
     }
 
     private static IQueryable<MaintenanceRequestResponse> ProjectRequest(

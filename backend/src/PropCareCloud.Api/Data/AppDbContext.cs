@@ -12,6 +12,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<MaintenanceRequestComment> MaintenanceRequestComments => Set<MaintenanceRequestComment>();
     public DbSet<MaintenanceRequestAttachment> MaintenanceRequestAttachments => Set<MaintenanceRequestAttachment>();
     public DbSet<AuthUserAccount> AuthUserAccounts => Set<AuthUserAccount>();
+    public DbSet<TenantUnitAssignment> TenantUnitAssignments => Set<TenantUnitAssignment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -24,6 +25,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigureMaintenanceRequestComment(modelBuilder);
         ConfigureMaintenanceRequestAttachment(modelBuilder);
         ConfigureAuthUserAccount(modelBuilder);
+        ConfigureTenantUnitAssignment(modelBuilder);
     }
 
     private static void ConfigureUserProfile(ModelBuilder modelBuilder)
@@ -190,6 +192,41 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.HasOne(account => account.UserProfile)
                 .WithOne(user => user.AuthUserAccount)
                 .HasForeignKey<AuthUserAccount>(account => account.UserProfileId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private static void ConfigureTenantUnitAssignment(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<TenantUnitAssignment>(entity =>
+        {
+            entity.ToTable("tenant_unit_assignments");
+            entity.HasKey(assignment => assignment.Id);
+
+            entity.Property(assignment => assignment.TenantProfileId).IsRequired();
+            entity.Property(assignment => assignment.RentalUnitId).IsRequired();
+            entity.Property(assignment => assignment.LeaseStartDateUtc).IsRequired();
+            entity.Property(assignment => assignment.LeaseEndDateUtc);
+            entity.Property(assignment => assignment.IsActive).IsRequired();
+            entity.Property(assignment => assignment.CreatedAtUtc).IsRequired();
+
+            entity.HasIndex(assignment => assignment.TenantProfileId);
+            entity.HasIndex(assignment => assignment.RentalUnitId);
+            entity.HasIndex(assignment => new
+            {
+                assignment.TenantProfileId,
+                assignment.RentalUnitId,
+                assignment.IsActive
+            }).IsUnique();
+
+            entity.HasOne(assignment => assignment.TenantProfile)
+                .WithMany(user => user.TenantUnitAssignments)
+                .HasForeignKey(assignment => assignment.TenantProfileId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(assignment => assignment.RentalUnit)
+                .WithMany(unit => unit.TenantAssignments)
+                .HasForeignKey(assignment => assignment.RentalUnitId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }

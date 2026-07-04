@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using PropCareCloud.Api.Data;
+using PropCareCloud.Api.Domain.Entities;
 using PropCareCloud.Api.Domain.Enums;
 using PropCareCloud.Api.DTOs.Auth;
 using PropCareCloud.Api.Services;
@@ -44,6 +45,29 @@ public sealed class AuthServiceTests
 
         Assert.Equal(4, await dbContext.AuthUserAccounts.CountAsync());
         Assert.Equal(4, await dbContext.UserProfiles.CountAsync());
+    }
+
+    [Fact]
+    public async Task EnsureDemoAccountsAsync_CreatesTenantUnitAssignmentWithoutDuplicates()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        await SeedOccupiedUnitAsync(dbContext);
+        var service = new AuthService(dbContext, CreateConfiguration());
+
+        await service.EnsureDemoAccountsAsync();
+        await service.EnsureDemoAccountsAsync();
+
+        var tenantAccount = await dbContext.AuthUserAccounts
+            .Include(account => account.UserProfile)
+            .SingleAsync(account => account.Email == "tenant@propcare.demo");
+        var assignments = await dbContext.TenantUnitAssignments
+            .Where(assignment => assignment.TenantProfileId == tenantAccount.UserProfileId)
+            .ToListAsync();
+
+        Assert.Single(assignments);
+        Assert.True(assignments[0].IsActive);
+        Assert.Null(assignments[0].LeaseEndDateUtc);
     }
 
     [Fact]
@@ -145,5 +169,30 @@ public sealed class AuthServiceTests
                 ["Jwt:SigningKey"] = "UnitTestJwtSigningKeyForPropCareCloudAuthSprintNine"
             })
             .Build();
+    }
+
+    private static async Task SeedOccupiedUnitAsync(AppDbContext dbContext)
+    {
+        var property = new Property
+        {
+            Name = "Cloud Residence",
+            AddressLine1 = "12 Innovation Avenue",
+            City = "Kuala Lumpur",
+            Country = "Malaysia",
+            Status = PropertyStatus.Active
+        };
+        var unit = new RentalUnit
+        {
+            PropertyId = property.Id,
+            Property = property,
+            UnitNumber = "B-1102",
+            Floor = "11",
+            Bedrooms = 1,
+            Status = UnitStatus.Occupied
+        };
+
+        dbContext.Properties.Add(property);
+        dbContext.RentalUnits.Add(unit);
+        await dbContext.SaveChangesAsync();
     }
 }

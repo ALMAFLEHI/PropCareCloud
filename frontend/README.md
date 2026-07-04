@@ -97,6 +97,26 @@ Auth API calls:
 - `GET /api/auth/demo-credentials`
 - `POST /api/auth/ensure-demo-accounts`
 
+## Sprint 9.1 Role-Based UI Behavior
+
+The frontend now follows the backend RBAC rules instead of only changing dashboard text.
+
+- Admin / Owner sees dashboard, maintenance requests, properties, and users/roles.
+- Property Manager sees dashboard, maintenance requests, and properties.
+- Tenant sees dashboard and maintenance requests only.
+- Maintenance Staff sees dashboard and maintenance requests only.
+- Tenant request creation uses `GET /api/user-profiles/me/assigned-units` and does not ask for `tenantProfileId`.
+- Tenant request cards show tracking only; no status or assignment controls.
+- Maintenance Staff request page shows assigned jobs only, no create button, and status options limited to In progress and Completed.
+- Admin / Owner and Property Manager request page includes status controls and staff assignment controls.
+
+Sprint 9.1 API calls:
+
+- `GET /api/user-profiles/maintenance-staff`
+- `GET /api/user-profiles/tenants`
+- `GET /api/user-profiles/me/assigned-units`
+- `PATCH /api/maintenance-requests/{id}/assign`
+
 ## Validation
 
 From the project root:

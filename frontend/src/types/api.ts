@@ -84,6 +84,10 @@ export type MaintenanceRequestStatusUpdateRequest = {
   status: ApiEnumValue
 }
 
+export type MaintenanceRequestAssignRequest = {
+  assignedStaffProfileId: string
+}
+
 export type MaintenanceRequestCommentResponse = {
   id: string
   maintenanceRequestId: string
@@ -121,4 +125,24 @@ export type DemoCredentialResponse = {
   email: string
   password: string
   purpose: string
+}
+
+export type UserProfileSummaryResponse = {
+  id: string
+  fullName: string
+  email: string
+  role: UserRole
+  roleDisplayName: string
+}
+
+export type AssignedUnitResponse = {
+  id: string
+  rentalUnitId: string
+  propertyId: string
+  propertyName: string
+  unitNumber: string
+  floor?: string | null
+  bedrooms?: number | null
+  status: ApiEnumValue
+  leaseStartDateUtc: string
 }

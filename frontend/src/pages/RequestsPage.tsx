@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
   ClipboardCheck,
-  ListChecks,
   Plus,
   RefreshCcw,
   Send,
+  UserCheck,
   Wrench,
 } from 'lucide-react'
 import {
+  assignMaintenanceRequest,
   createMaintenanceRequest,
   getMaintenanceRequests,
+  getMaintenanceStaff,
+  getMyAssignedUnits,
+  getTenants,
   updateMaintenanceRequestStatus,
 } from '../api/propCareApi'
 import EmptyState from '../components/EmptyState'
@@ -18,29 +22,43 @@ import LoadingState from '../components/LoadingState'
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
 import { useAuth } from '../context/AuthContext'
-import type { ApiEnumValue, MaintenanceRequestResponse } from '../types/api'
+import type {
+  ApiEnumValue,
+  AssignedUnitResponse,
+  MaintenanceRequestResponse,
+  UserProfileSummaryResponse,
+} from '../types/api'
 import { formatDateTime, getCategoryLabel } from '../utils/formatters'
-import type { UserRoleKey } from '../utils/roles'
+import {
+  canAssignRequests,
+  canCreateMaintenanceRequest,
+  canUpdateRequestStatus,
+  getAllowedStatusValues,
+  isAdminOrManager,
+  isMaintenanceStaff,
+  isTenant,
+  type UserRoleKey,
+} from '../utils/roles'
 
 const requestSteps = [
   {
     title: 'Tenant request creation',
-    description: 'Create maintenance records with seeded tenant and unit IDs.',
+    description: 'Tenants can submit requests only for active assigned units.',
     icon: Send,
   },
   {
-    title: 'Manager review',
-    description: 'Review live records returned by the backend API.',
-    icon: ListChecks,
+    title: 'Manager assignment',
+    description: 'Admins and managers can assign requests to maintenance staff.',
+    icon: UserCheck,
   },
   {
-    title: 'Status update',
-    description: 'Move requests through submitted, assigned, progress, and closed states.',
+    title: 'Staff progress update',
+    description: 'Assigned staff can move work to in progress or completed.',
     icon: Wrench,
   },
   {
     title: 'Completion tracking',
-    description: 'Retain request timestamps, comments, and future attachment metadata.',
+    description: 'Request state stays synchronized with the protected backend API.',
     icon: ClipboardCheck,
   },
 ]
@@ -93,22 +111,22 @@ const requestPageCopy: Record<UserRoleKey, { title: string; description: string 
   AdminOwner: {
     title: 'Portfolio request oversight',
     description:
-      'Review all maintenance records across the demo portfolio and monitor request workload.',
+      'Review all maintenance records, assign staff, and move requests through the full workflow.',
   },
   PropertyManager: {
     title: 'Maintenance request management',
     description:
-      'Review tenant requests, track priorities, and update request status for local workflow validation.',
+      'Triage tenant issues, assign maintenance staff, and update request state for the managed portfolio.',
   },
   Tenant: {
-    title: 'Submit and track requests',
+    title: 'My maintenance requests',
     description:
-      'Create a maintenance request with seeded tenant/unit IDs and follow request progress.',
+      'Submit and track maintenance work for active units assigned to your tenant profile.',
   },
   MaintenanceStaff: {
-    title: 'Assigned work queue',
+    title: 'My assigned jobs',
     description:
-      'Review maintenance jobs and update progress as work moves through the demo workflow.',
+      'Review assigned maintenance work and update jobs to in progress or completed.',
   },
 }
 
@@ -126,16 +144,26 @@ function getStatusValue(status: ApiEnumValue) {
 }
 
 function RequestsPage() {
-  const { userRoleKey } = useAuth()
+  const { user, userRoleKey } = useAuth()
   const [requests, setRequests] = useState<MaintenanceRequestResponse[]>([])
+  const [assignedUnits, setAssignedUnits] = useState<AssignedUnitResponse[]>([])
+  const [maintenanceStaff, setMaintenanceStaff] = useState<UserProfileSummaryResponse[]>([])
+  const [tenants, setTenants] = useState<UserProfileSummaryResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [updatingRequestId, setUpdatingRequestId] = useState('')
+  const [assigningRequestId, setAssigningRequestId] = useState('')
   const [form, setForm] = useState(initialRequestForm)
-  const copy = requestPageCopy[userRoleKey ?? 'Tenant']
 
+  const copy = requestPageCopy[userRoleKey ?? 'Tenant']
+  const tenantRole = isTenant(user)
+  const staffRole = isMaintenanceStaff(user)
+  const adminOrManager = isAdminOrManager(user)
+  const canCreate = canCreateMaintenanceRequest(user)
+  const canAssign = canAssignRequests(user)
+  const allowedStatusValues = getAllowedStatusValues(user)
   const seededRequest = requests[0]
 
   const openRequests = useMemo(
@@ -152,19 +180,38 @@ function RequestsPage() {
     setError('')
 
     try {
-      const data = await getMaintenanceRequests()
-      setRequests(data)
-      const firstRequest = data[0]
-      if (firstRequest) {
-        setForm((current) => ({
-          ...current,
-          rentalUnitId: current.rentalUnitId || firstRequest.rentalUnitId,
-          tenantProfileId: current.tenantProfileId || firstRequest.tenantProfileId,
-        }))
-      }
+      const [requestData, assignedUnitData, staffData, tenantData] =
+        await Promise.all([
+          getMaintenanceRequests(),
+          tenantRole ? getMyAssignedUnits() : Promise.resolve([]),
+          adminOrManager ? getMaintenanceStaff() : Promise.resolve([]),
+          adminOrManager ? getTenants() : Promise.resolve([]),
+        ])
+
+      setRequests(requestData)
+      setAssignedUnits(assignedUnitData)
+      setMaintenanceStaff(staffData)
+      setTenants(tenantData)
+
+      const firstRequest = requestData[0]
+      const firstAssignedUnit = assignedUnitData[0]
+      const firstTenant = tenantData[0]
+      setForm((current) => ({
+        ...current,
+        rentalUnitId:
+          current.rentalUnitId ||
+          firstAssignedUnit?.rentalUnitId ||
+          firstRequest?.rentalUnitId ||
+          '',
+        tenantProfileId:
+          current.tenantProfileId ||
+          (tenantRole ? user?.userProfileId : firstTenant?.id) ||
+          firstRequest?.tenantProfileId ||
+          '',
+      }))
     } catch {
       setError(
-        'Maintenance requests could not be loaded. Confirm the backend is running on http://localhost:5015.',
+        'Maintenance requests could not be loaded. Confirm the backend is running on http://localhost:5015 and your demo account has permission.',
       )
     } finally {
       setIsLoading(false)
@@ -173,7 +220,7 @@ function RequestsPage() {
 
   useEffect(() => {
     void loadRequests()
-  }, [])
+  }, [adminOrManager, tenantRole, user?.userProfileId])
 
   function updateForm(field: keyof typeof initialRequestForm, value: string) {
     setForm((current) => ({ ...current, [field]: value }))
@@ -182,31 +229,65 @@ function RequestsPage() {
   function openCreateModal() {
     setForm((current) => ({
       ...current,
-      rentalUnitId: current.rentalUnitId || seededRequest?.rentalUnitId || '',
-      tenantProfileId: current.tenantProfileId || seededRequest?.tenantProfileId || '',
+      rentalUnitId:
+        current.rentalUnitId ||
+        assignedUnits[0]?.rentalUnitId ||
+        seededRequest?.rentalUnitId ||
+        '',
+      tenantProfileId:
+        current.tenantProfileId ||
+        (tenantRole ? user?.userProfileId : tenants[0]?.id) ||
+        seededRequest?.tenantProfileId ||
+        '',
     }))
     setIsModalOpen(true)
   }
 
   async function handleStatusChange(requestId: string, value: string) {
     setUpdatingRequestId(requestId)
+    setError('')
 
     try {
       await updateMaintenanceRequestStatus(requestId, { status: Number(value) })
       await loadRequests()
+    } catch {
+      setError('Status update failed. Confirm the request is assigned to your role.')
     } finally {
       setUpdatingRequestId('')
+    }
+  }
+
+  async function handleAssignRequest(requestId: string, staffProfileId: string) {
+    if (!staffProfileId) {
+      return
+    }
+
+    setAssigningRequestId(requestId)
+    setError('')
+
+    try {
+      await assignMaintenanceRequest(requestId, {
+        assignedStaffProfileId: staffProfileId,
+      })
+      await loadRequests()
+    } catch {
+      setError('Staff assignment failed. Confirm the selected user has the Maintenance Staff role.')
+    } finally {
+      setAssigningRequestId('')
     }
   }
 
   async function handleCreateRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsSubmitting(true)
+    setError('')
 
     try {
       await createMaintenanceRequest({
         rentalUnitId: form.rentalUnitId.trim(),
-        tenantProfileId: form.tenantProfileId.trim(),
+        tenantProfileId: tenantRole
+          ? user?.userProfileId ?? '00000000-0000-0000-0000-000000000000'
+          : form.tenantProfileId.trim(),
         title: form.title.trim(),
         description: form.description.trim(),
         category: Number(form.category),
@@ -220,6 +301,12 @@ function RequestsPage() {
       })
       setIsModalOpen(false)
       await loadRequests()
+    } catch {
+      setError(
+        tenantRole
+          ? 'Request creation failed. Tenants can submit only for active assigned units.'
+          : 'Request creation failed. Confirm the unit and tenant profile are valid.',
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -240,11 +327,12 @@ function RequestsPage() {
               {copy.description}
             </p>
           </div>
-          {userRoleKey !== 'MaintenanceStaff' && (
+          {canCreate && (
             <button
               type="button"
               onClick={openCreateModal}
-              className="inline-flex w-fit items-center gap-2 rounded-md bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800"
+              disabled={tenantRole && assignedUnits.length === 0}
+              className="inline-flex w-fit items-center gap-2 rounded-md bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800 disabled:cursor-not-allowed disabled:bg-slate-400"
             >
               <Plus className="size-4" aria-hidden="true" />
               Add Request
@@ -278,7 +366,9 @@ function RequestsPage() {
 
       <section className="grid gap-4 md:grid-cols-3">
         <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Total Requests</p>
+          <p className="text-sm font-medium text-slate-500">
+            {staffRole ? 'Assigned Requests' : 'Visible Requests'}
+          </p>
           <p className="mt-3 text-3xl font-semibold text-slate-950">
             {requests.length}
           </p>
@@ -290,11 +380,15 @@ function RequestsPage() {
           </p>
         </article>
         <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-sm font-medium text-slate-500">Seed Helper</p>
+          <p className="text-sm font-medium text-slate-500">
+            {tenantRole ? 'Assigned Units' : 'Assignment Options'}
+          </p>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            {seededRequest
-              ? `Unit ${seededRequest.unitNumber} and ${seededRequest.tenantName} are available for demo create tests.`
-              : 'Seeded IDs appear here after request data loads.'}
+            {tenantRole
+              ? `${assignedUnits.length} active unit assignment${assignedUnits.length === 1 ? '' : 's'} available.`
+              : adminOrManager
+                ? `${maintenanceStaff.length} staff member${maintenanceStaff.length === 1 ? '' : 's'} available.`
+                : 'Status updates are limited to your assigned jobs.'}
           </p>
         </article>
       </section>
@@ -313,11 +407,11 @@ function RequestsPage() {
       {!isLoading && !error && requests.length === 0 && (
         <EmptyState
           title="No maintenance requests found"
-          message="Run the seed endpoint or create a new request with valid local IDs."
+          message="No records are visible for the signed-in role yet."
         />
       )}
 
-      {!isLoading && !error && requests.length > 0 && (
+      {!isLoading && requests.length > 0 && (
         <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -325,7 +419,7 @@ function RequestsPage() {
                 Request Records
               </h3>
               <p className="mt-1 text-sm text-slate-500">
-                Status changes call PATCH `/api/maintenance-requests/{'{id}'}/status`.
+                Records and actions are filtered by the authenticated backend role.
               </p>
             </div>
             <button
@@ -342,7 +436,7 @@ function RequestsPage() {
 
           <div className="divide-y divide-slate-200">
             {requests.map((request) => (
-              <article key={request.id} className="grid gap-5 px-5 py-5 xl:grid-cols-[1fr_240px]">
+              <article key={request.id} className="grid gap-5 px-5 py-5 xl:grid-cols-[1fr_260px]">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <h4 className="text-base font-semibold text-slate-950">
@@ -378,30 +472,69 @@ function RequestsPage() {
                   </dl>
                 </div>
 
-                <div className="rounded-lg bg-slate-50 p-4">
-                  <label className="block">
-                    <span className="text-sm font-medium text-slate-700">
-                      Update status
-                    </span>
-                    <select
-                      value={getStatusValue(request.status)}
-                      disabled={updatingRequestId === request.id}
-                      onChange={(event) => {
-                        void handleStatusChange(request.id, event.target.value)
-                      }}
-                      className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:bg-slate-100"
-                    >
-                      {statusOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <p className="mt-3 text-xs leading-5 text-slate-500">
-                    {updatingRequestId === request.id
-                      ? 'Saving status update...'
-                      : 'Changes are persisted to the local backend.'}
+                <div className="space-y-4 rounded-lg bg-slate-50 p-4">
+                  {canAssign && (
+                    <label className="block">
+                      <span className="text-sm font-medium text-slate-700">
+                        Assigned staff
+                      </span>
+                      <select
+                        value={request.assignedStaffProfileId ?? ''}
+                        disabled={assigningRequestId === request.id}
+                        onChange={(event) => {
+                          void handleAssignRequest(request.id, event.target.value)
+                        }}
+                        className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                      >
+                        <option value="">Unassigned</option>
+                        {maintenanceStaff.map((staff) => (
+                          <option key={staff.id} value={staff.id}>
+                            {staff.fullName}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+
+                  {canUpdateRequestStatus(user) && allowedStatusValues.length > 0 ? (
+                    <label className="block">
+                      <span className="text-sm font-medium text-slate-700">
+                        Update status
+                      </span>
+                      <select
+                        value={getStatusValue(request.status)}
+                        disabled={updatingRequestId === request.id}
+                        onChange={(event) => {
+                          void handleStatusChange(request.id, event.target.value)
+                        }}
+                        className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                      >
+                        {statusOptions
+                          .filter((option) => allowedStatusValues.includes(option.value))
+                          .map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                      </select>
+                    </label>
+                  ) : (
+                    <div>
+                      <p className="text-sm font-medium text-slate-700">
+                        Status tracking
+                      </p>
+                      <p className="mt-2 text-sm leading-6 text-slate-600">
+                        This role can view request progress but cannot update status.
+                      </p>
+                    </div>
+                  )}
+
+                  <p className="text-xs leading-5 text-slate-500">
+                    {updatingRequestId === request.id || assigningRequestId === request.id
+                      ? 'Saving changes...'
+                      : request.assignedStaffName
+                        ? `Assigned to ${request.assignedStaffName}.`
+                        : 'No staff member assigned yet.'}
                   </p>
                 </div>
               </article>
@@ -413,40 +546,66 @@ function RequestsPage() {
       {isModalOpen && (
         <Modal
           title="Add Maintenance Request"
-          description="Creates a demo request using existing seeded tenant and rental unit IDs."
+          description={
+            tenantRole
+              ? 'Creates a tenant request for one of your active assigned units.'
+              : 'Creates a maintenance request for a selected tenant and rental unit.'
+          }
           onClose={() => setIsModalOpen(false)}
         >
           <form className="space-y-4" onSubmit={handleCreateRequest}>
-            <div className="rounded-md bg-slate-50 p-4 text-sm leading-6 text-slate-600">
-              Use the seeded IDs below for local validation until authentication
-              and tenant lookup screens are added.
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            {tenantRole ? (
               <label className="block">
                 <span className="text-sm font-medium text-slate-700">
-                  Rental unit ID
+                  Assigned unit
                 </span>
-                <input
+                <select
                   required
                   value={form.rentalUnitId}
                   onChange={(event) => updateForm('rentalUnitId', event.target.value)}
-                  className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
-                />
+                  className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+                >
+                  {assignedUnits.map((unit) => (
+                    <option key={unit.id} value={unit.rentalUnitId}>
+                      {unit.propertyName} - Unit {unit.unitNumber}
+                    </option>
+                  ))}
+                </select>
               </label>
-              <label className="block">
-                <span className="text-sm font-medium text-slate-700">
-                  Tenant profile ID
-                </span>
-                <input
-                  required
-                  value={form.tenantProfileId}
-                  onChange={(event) =>
-                    updateForm('tenantProfileId', event.target.value)
-                  }
-                  className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
-                />
-              </label>
-            </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-700">
+                    Rental unit ID
+                  </span>
+                  <input
+                    required
+                    value={form.rentalUnitId}
+                    onChange={(event) => updateForm('rentalUnitId', event.target.value)}
+                    className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+                  />
+                </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-slate-700">
+                    Tenant profile
+                  </span>
+                  <select
+                    required
+                    value={form.tenantProfileId}
+                    onChange={(event) =>
+                      updateForm('tenantProfileId', event.target.value)
+                    }
+                    className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+                  >
+                    {tenants.map((tenant) => (
+                      <option key={tenant.id} value={tenant.id}>
+                        {tenant.fullName}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            )}
             <label className="block">
               <span className="text-sm font-medium text-slate-700">Title</span>
               <input
@@ -476,7 +635,7 @@ function RequestsPage() {
                 <select
                   value={form.category}
                   onChange={(event) => updateForm('category', event.target.value)}
-                  className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+                  className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
                 >
                   {categoryOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -490,7 +649,7 @@ function RequestsPage() {
                 <select
                   value={form.priority}
                   onChange={(event) => updateForm('priority', event.target.value)}
-                  className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+                  className="mt-2 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
                 >
                   {priorityOptions.map((option) => (
                     <option key={option.value} value={option.value}>

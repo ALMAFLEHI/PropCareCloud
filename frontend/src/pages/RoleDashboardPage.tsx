@@ -11,19 +11,25 @@ import {
   Wrench,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { getMaintenanceRequests, getProperties } from '../api/propCareApi'
+import { getMaintenanceRequests, getMyAssignedUnits, getProperties } from '../api/propCareApi'
 import ApiStatusCard from '../components/ApiStatusCard'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import StatCard from '../components/StatCard'
 import StatusBadge from '../components/StatusBadge'
 import { useAuth } from '../context/AuthContext'
-import type { ApiEnumValue, MaintenanceRequestResponse, PropertyResponse } from '../types/api'
+import type {
+  ApiEnumValue,
+  AssignedUnitResponse,
+  MaintenanceRequestResponse,
+  PropertyResponse,
+} from '../types/api'
 import { formatDateTime, getPriorityLabel } from '../utils/formatters'
 
 type DashboardData = {
   properties: PropertyResponse[]
   requests: MaintenanceRequestResponse[]
+  assignedUnits: AssignedUnitResponse[]
 }
 
 type DashboardCopy = {
@@ -45,7 +51,7 @@ const dashboardCopy: Record<string, DashboardCopy> = {
   },
   PropertyManager: {
     eyebrow: 'Property Manager Dashboard',
-    title: 'Request triage and coordination',
+    title: 'Request triage and property operations',
     description:
       'Review open work, track property context, and coordinate maintenance activity across the local demo data.',
     actionLabel: 'Manage requests',
@@ -53,15 +59,15 @@ const dashboardCopy: Record<string, DashboardCopy> = {
   },
   Tenant: {
     eyebrow: 'Tenant Dashboard',
-    title: 'Request tracking',
+    title: 'My home service portal',
     description:
-      'Submit and follow maintenance requests through the same portal experience planned for tenants.',
+      'Submit and follow maintenance requests for units assigned to your tenant profile.',
     actionLabel: 'Submit request',
     actionTo: '/requests',
   },
   MaintenanceStaff: {
     eyebrow: 'Maintenance Staff Dashboard',
-    title: 'Work queue focus',
+    title: 'My assigned work queue',
     description:
       'Review assigned and in-progress maintenance work, then update job status from the requests area.',
     actionLabel: 'View work queue',
@@ -110,14 +116,15 @@ function RoleDashboardPage() {
     setError('')
 
     try {
-      const [properties, requests] = await Promise.all([
-        getProperties(),
+      const [properties, requests, assignedUnits] = await Promise.all([
+        isAdminOwner || isPropertyManager ? getProperties() : Promise.resolve([]),
         getMaintenanceRequests(),
+        isTenant ? getMyAssignedUnits() : Promise.resolve([]),
       ])
-      setDashboardData({ properties, requests })
+      setDashboardData({ properties, requests, assignedUnits })
     } catch {
       setError(
-        'Dashboard data could not be loaded. Confirm the backend and local PostgreSQL connection are running.',
+        'Dashboard data could not be loaded. Confirm the backend is running and the signed-in role has valid demo data.',
       )
     } finally {
       setIsLoading(false)
@@ -126,11 +133,12 @@ function RoleDashboardPage() {
 
   useEffect(() => {
     void loadDashboardData()
-  }, [])
+  }, [isAdminOwner, isPropertyManager, isTenant])
 
   const summary = useMemo(() => {
     const properties = dashboardData?.properties ?? []
     const requests = dashboardData?.requests ?? []
+    const assignedUnits = dashboardData?.assignedUnits ?? []
     const openRequests = requests.filter((request) =>
       isOpenRequest(request.status),
     )
@@ -148,6 +156,7 @@ function RoleDashboardPage() {
     return {
       properties,
       requests,
+      assignedUnits,
       openRequests,
       highPriorityRequests,
       assignedRequests,
@@ -207,15 +216,25 @@ function RoleDashboardPage() {
               icon={Wrench}
             />
             <StatCard
-              title={isMaintenanceStaff ? 'Assigned Work' : 'Properties'}
+              title={
+                isMaintenanceStaff
+                  ? 'Assigned Work'
+                  : isTenant
+                    ? 'Assigned Units'
+                    : 'Properties'
+              }
               value={String(
                 isMaintenanceStaff
                   ? summary.assignedRequests.length
+                  : isTenant
+                    ? summary.assignedUnits.length
                   : summary.properties.length,
               )}
               helperText={
                 isMaintenanceStaff
                   ? 'Requests with assigned maintenance staff.'
+                  : isTenant
+                    ? 'Active unit assignments for this tenant profile.'
                   : 'Property records loaded from the backend.'
               }
               icon={Building2}
@@ -268,6 +287,14 @@ function RoleDashboardPage() {
                     >
                       Review urgent maintenance requests
                     </Link>
+                    {isPropertyManager && (
+                      <Link
+                        to="/requests"
+                        className="rounded-lg border border-slate-200 p-4 text-sm font-semibold text-slate-950 hover:border-cyan-300 hover:bg-cyan-50"
+                      >
+                        Assign maintenance staff
+                      </Link>
+                    )}
                   </>
                 )}
                 {isTenant && (
@@ -307,6 +334,40 @@ function RoleDashboardPage() {
 
             <ApiStatusCard />
           </section>
+
+          {isTenant && (
+            <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-950">
+                    Assigned Units
+                  </h3>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Active units available for tenant request creation.
+                  </p>
+                </div>
+                <span className="text-sm font-medium text-slate-500">
+                  {summary.assignedUnits.length} active
+                </span>
+              </div>
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                {summary.assignedUnits.map((unit) => (
+                  <article
+                    key={unit.id}
+                    className="rounded-lg border border-slate-200 p-4"
+                  >
+                    <p className="text-sm font-semibold text-slate-950">
+                      {unit.propertyName}
+                    </p>
+                    <p className="mt-2 text-sm text-slate-600">
+                      Unit {unit.unitNumber}
+                      {unit.floor ? ` - Floor ${unit.floor}` : ''}
+                    </p>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
 
           <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

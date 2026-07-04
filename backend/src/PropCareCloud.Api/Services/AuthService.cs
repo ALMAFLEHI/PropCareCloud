@@ -140,6 +140,11 @@ public sealed class AuthService(
             account.Email = demoAccount.Email;
             account.IsActive = true;
             account.PasswordHash = BCrypt.Net.BCrypt.HashPassword(demoAccount.Password);
+
+            if (demoAccount.Role == UserRole.Tenant)
+            {
+                await EnsureTenantUnitAssignmentAsync(userProfile);
+            }
         }
 
         await dbContext.SaveChangesAsync();
@@ -172,6 +177,40 @@ public sealed class AuthService(
         dbContext.UserProfiles.Add(userProfile);
 
         return userProfile;
+    }
+
+    private async Task EnsureTenantUnitAssignmentAsync(UserProfile tenantProfile)
+    {
+        var hasActiveAssignment = await dbContext.TenantUnitAssignments
+            .AnyAsync(assignment =>
+                assignment.TenantProfileId == tenantProfile.Id &&
+                assignment.IsActive &&
+                assignment.LeaseEndDateUtc == null);
+        if (hasActiveAssignment)
+        {
+            return;
+        }
+
+        var assignedUnit = await dbContext.RentalUnits
+            .Where(unit => unit.Status == UnitStatus.Occupied)
+            .OrderBy(unit => unit.UnitNumber == "B-1102" ? 0 : 1)
+            .ThenBy(unit => unit.UnitNumber)
+            .FirstOrDefaultAsync();
+        if (assignedUnit is null)
+        {
+            return;
+        }
+
+        dbContext.TenantUnitAssignments.Add(new TenantUnitAssignment
+        {
+            TenantProfileId = tenantProfile.Id,
+            TenantProfile = tenantProfile,
+            RentalUnitId = assignedUnit.Id,
+            RentalUnit = assignedUnit,
+            LeaseStartDateUtc = DateTime.UtcNow.AddMonths(-6),
+            IsActive = true,
+            CreatedAtUtc = DateTime.UtcNow
+        });
     }
 
     private string GenerateToken(AuthUserAccount account, DateTime expiresAtUtc)

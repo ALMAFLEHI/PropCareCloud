@@ -1,4 +1,6 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using PropCareCloud.Api.Controllers;
 using PropCareCloud.Api.Data;
 using PropCareCloud.Api.Domain.Entities;
 using PropCareCloud.Api.Domain.Enums;
@@ -15,7 +17,7 @@ public sealed class MaintenanceRequestServiceTests
         var options = CreateOptions();
         await using var dbContext = new AppDbContext(options);
         await SeedMaintenanceGraphAsync(dbContext);
-        var service = new MaintenanceRequestService(dbContext);
+        var service = CreateService(dbContext);
 
         var requests = await service.GetRequestsAsync();
 
@@ -30,7 +32,7 @@ public sealed class MaintenanceRequestServiceTests
         var options = CreateOptions();
         await using var dbContext = new AppDbContext(options);
         var seed = await SeedMaintenanceGraphAsync(dbContext, includeRequest: false);
-        var service = new MaintenanceRequestService(dbContext);
+        var service = CreateService(dbContext);
 
         var created = await service.CreateRequestAsync(new MaintenanceRequestCreateRequest
         {
@@ -54,7 +56,7 @@ public sealed class MaintenanceRequestServiceTests
         var options = CreateOptions();
         await using var dbContext = new AppDbContext(options);
         var seed = await SeedMaintenanceGraphAsync(dbContext, includeRequest: false);
-        var service = new MaintenanceRequestService(dbContext);
+        var service = CreateService(dbContext);
 
         var created = await service.CreateRequestAsync(new MaintenanceRequestCreateRequest
         {
@@ -76,7 +78,7 @@ public sealed class MaintenanceRequestServiceTests
         var options = CreateOptions();
         await using var dbContext = new AppDbContext(options);
         var seed = await SeedMaintenanceGraphAsync(dbContext);
-        var service = new MaintenanceRequestService(dbContext);
+        var service = CreateService(dbContext);
 
         var invalidAssignment = await service.AssignRequestAsync(seed.Request!.Id, new MaintenanceRequestAssignRequest
         {
@@ -99,7 +101,7 @@ public sealed class MaintenanceRequestServiceTests
         var options = CreateOptions();
         await using var dbContext = new AppDbContext(options);
         var seed = await SeedMaintenanceGraphAsync(dbContext);
-        var service = new MaintenanceRequestService(dbContext);
+        var service = CreateService(dbContext);
 
         var updated = await service.UpdateStatusAsync(seed.Request!.Id, new MaintenanceRequestStatusUpdateRequest
         {
@@ -117,7 +119,7 @@ public sealed class MaintenanceRequestServiceTests
         var options = CreateOptions();
         await using var dbContext = new AppDbContext(options);
         var seed = await SeedMaintenanceGraphAsync(dbContext);
-        var service = new MaintenanceRequestService(dbContext);
+        var service = CreateService(dbContext, seed.Tenant.Id, UserRole.Tenant);
 
         var comment = await service.AddCommentAsync(seed.Request!.Id, new MaintenanceRequestCommentCreateRequest
         {
@@ -146,7 +148,7 @@ public sealed class MaintenanceRequestServiceTests
             IsInternal = false
         });
         await dbContext.SaveChangesAsync();
-        var service = new MaintenanceRequestService(dbContext);
+        var service = CreateService(dbContext);
 
         var comments = await service.GetCommentsAsync(seed.Request.Id);
 
@@ -155,11 +157,224 @@ public sealed class MaintenanceRequestServiceTests
         Assert.Equal(seed.Tenant.FullName, comments[0].UserFullName);
     }
 
+    [Fact]
+    public async Task GetRequestsAsync_TenantSeesOnlyOwnRequests()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedMaintenanceGraphAsync(dbContext);
+        var otherTenant = new UserProfile
+        {
+            FullName = "Other Tenant",
+            Email = "tenant.other@example.com",
+            Role = UserRole.Tenant
+        };
+        dbContext.UserProfiles.Add(otherTenant);
+        dbContext.MaintenanceRequests.Add(new MaintenanceRequest
+        {
+            RentalUnitId = seed.Unit.Id,
+            TenantProfileId = otherTenant.Id,
+            Title = "Other tenant request",
+            Description = "This record should not appear for the signed-in tenant.",
+            Category = MaintenanceCategory.Other,
+            Priority = MaintenancePriority.Low,
+            Status = MaintenanceStatus.Submitted
+        });
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext, seed.Tenant.Id, UserRole.Tenant);
+
+        var requests = await service.GetRequestsAsync();
+
+        Assert.Single(requests);
+        Assert.Equal(seed.Tenant.Id, requests[0].TenantProfileId);
+    }
+
+    [Fact]
+    public async Task GetRequestsAsync_MaintenanceStaffSeesOnlyAssignedRequests()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedMaintenanceGraphAsync(dbContext);
+        seed.Request!.AssignedStaffProfileId = seed.Staff.Id;
+        var unassignedRequest = new MaintenanceRequest
+        {
+            RentalUnitId = seed.Unit.Id,
+            TenantProfileId = seed.Tenant.Id,
+            Title = "Unassigned tenant request",
+            Description = "This record should not appear for maintenance staff.",
+            Category = MaintenanceCategory.Plumbing,
+            Priority = MaintenancePriority.Medium,
+            Status = MaintenanceStatus.Submitted
+        };
+        dbContext.MaintenanceRequests.Add(unassignedRequest);
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext, seed.Staff.Id, UserRole.MaintenanceStaff);
+
+        var requests = await service.GetRequestsAsync();
+
+        Assert.Single(requests);
+        Assert.Equal(seed.Staff.Id, requests[0].AssignedStaffProfileId);
+    }
+
+    [Fact]
+    public async Task GetRequestsAsync_AdminAndManagerSeeAllRequests()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedMaintenanceGraphAsync(dbContext);
+        dbContext.MaintenanceRequests.Add(new MaintenanceRequest
+        {
+            RentalUnitId = seed.Unit.Id,
+            TenantProfileId = seed.Tenant.Id,
+            Title = "Second request",
+            Description = "Admin and manager should both see this request.",
+            Category = MaintenanceCategory.Security,
+            Priority = MaintenancePriority.Low,
+            Status = MaintenanceStatus.UnderReview
+        });
+        await dbContext.SaveChangesAsync();
+        var adminService = CreateService(dbContext, role: UserRole.AdminOwner);
+        var managerService = CreateService(dbContext, seed.Manager.Id, UserRole.PropertyManager);
+
+        var adminRequests = await adminService.GetRequestsAsync();
+        var managerRequests = await managerService.GetRequestsAsync();
+
+        Assert.Equal(2, adminRequests.Count);
+        Assert.Equal(2, managerRequests.Count);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_TenantRequiresActiveAssignedUnit()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedMaintenanceGraphAsync(dbContext, includeRequest: false);
+        dbContext.TenantUnitAssignments.Add(new TenantUnitAssignment
+        {
+            TenantProfileId = seed.Tenant.Id,
+            RentalUnitId = seed.Unit.Id,
+            IsActive = true
+        });
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext, seed.Tenant.Id, UserRole.Tenant);
+
+        var created = await service.CreateRequestAsync(new MaintenanceRequestCreateRequest
+        {
+            RentalUnitId = seed.Unit.Id,
+            TenantProfileId = seed.Manager.Id,
+            Title = "Tenant submitted issue",
+            Description = "The API should use the signed-in tenant profile.",
+            Category = MaintenanceCategory.Other,
+            Priority = MaintenancePriority.Medium
+        });
+
+        Assert.NotNull(created);
+        Assert.Equal(seed.Tenant.Id, created.TenantProfileId);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_TenantCannotCreateForUnassignedUnit()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedMaintenanceGraphAsync(dbContext, includeRequest: false);
+        var service = CreateService(dbContext, seed.Tenant.Id, UserRole.Tenant);
+
+        var created = await service.CreateRequestAsync(new MaintenanceRequestCreateRequest
+        {
+            RentalUnitId = seed.Unit.Id,
+            TenantProfileId = seed.Tenant.Id,
+            Title = "Unassigned unit",
+            Description = "This should be blocked by tenant assignment rules.",
+            Category = MaintenanceCategory.Other,
+            Priority = MaintenancePriority.Medium
+        });
+
+        Assert.Null(created);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_MaintenanceStaffCanOnlyUpdateAssignedJobs()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedMaintenanceGraphAsync(dbContext);
+        seed.Request!.AssignedStaffProfileId = seed.Staff.Id;
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext, seed.Staff.Id, UserRole.MaintenanceStaff);
+
+        var validUpdate = await service.UpdateStatusAsync(seed.Request.Id, new MaintenanceRequestStatusUpdateRequest
+        {
+            Status = MaintenanceStatus.InProgress
+        });
+        var invalidUpdate = await service.UpdateStatusAsync(seed.Request.Id, new MaintenanceRequestStatusUpdateRequest
+        {
+            Status = MaintenanceStatus.Cancelled
+        });
+
+        Assert.NotNull(validUpdate);
+        Assert.Equal(MaintenanceStatus.InProgress, validUpdate.Status);
+        Assert.Null(invalidUpdate);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_MaintenanceStaffCannotUpdateUnassignedJob()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedMaintenanceGraphAsync(dbContext);
+        var service = CreateService(dbContext, seed.Staff.Id, UserRole.MaintenanceStaff);
+
+        var updated = await service.UpdateStatusAsync(seed.Request!.Id, new MaintenanceRequestStatusUpdateRequest
+        {
+            Status = MaintenanceStatus.InProgress
+        });
+
+        Assert.Null(updated);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_TenantCannotUpdateStatus()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedMaintenanceGraphAsync(dbContext);
+        var service = CreateService(dbContext, seed.Tenant.Id, UserRole.Tenant);
+
+        var updated = await service.UpdateStatusAsync(seed.Request!.Id, new MaintenanceRequestStatusUpdateRequest
+        {
+            Status = MaintenanceStatus.Completed
+        });
+
+        Assert.Null(updated);
+    }
+
+    [Fact]
+    public void PropertiesController_RequiresAdminOrManagerPolicy()
+    {
+        var authorizeAttribute = typeof(PropertiesController)
+            .GetCustomAttributes(typeof(AuthorizeAttribute), inherit: true)
+            .Cast<AuthorizeAttribute>()
+            .Single();
+
+        Assert.Equal("AdminOrManager", authorizeAttribute.Policy);
+    }
+
     private static DbContextOptions<AppDbContext> CreateOptions()
     {
         return new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase($"propcare-maintenance-{Guid.NewGuid()}")
             .Options;
+    }
+
+    private static MaintenanceRequestService CreateService(
+        AppDbContext dbContext,
+        Guid? userProfileId = null,
+        UserRole role = UserRole.AdminOwner)
+    {
+        return new MaintenanceRequestService(
+            dbContext,
+            new FakeCurrentUserService(userProfileId ?? Guid.NewGuid(), role));
     }
 
     private static async Task<MaintenanceSeed> SeedMaintenanceGraphAsync(
@@ -239,4 +454,22 @@ public sealed class MaintenanceRequestServiceTests
         UserProfile Manager,
         UserProfile Staff,
         MaintenanceRequest? Request);
+
+    private sealed class FakeCurrentUserService(Guid userProfileId, UserRole role) : ICurrentUserService
+    {
+        public bool IsAuthenticated => true;
+        public Guid? UserProfileId => userProfileId;
+        public string? Email => "test-user@propcare.local";
+        public UserRole? Role => role;
+        public bool IsAdminOwner => role == UserRole.AdminOwner;
+        public bool IsPropertyManager => role == UserRole.PropertyManager;
+        public bool IsTenant => role == UserRole.Tenant;
+        public bool IsMaintenanceStaff => role == UserRole.MaintenanceStaff;
+        public bool IsAdminOrManager => role is UserRole.AdminOwner or UserRole.PropertyManager;
+
+        public bool HasRole(params UserRole[] roles)
+        {
+            return roles.Contains(role);
+        }
+    }
 }

@@ -14,4 +14,5 @@ public sealed class RentalUnit
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
     public ICollection<MaintenanceRequest> MaintenanceRequests { get; set; } = new List<MaintenanceRequest>();
+    public ICollection<TenantUnitAssignment> TenantAssignments { get; set; } = new List<TenantUnitAssignment>();
 }

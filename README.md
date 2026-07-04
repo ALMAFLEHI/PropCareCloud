@@ -166,3 +166,26 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
 ```
 
 AWS Cognito, production password reset, email invitation flow, Amazon RDS cloud connectivity, and cloud deployment remain deferred to later sprints.
+
+## Sprint 9.1 Real Role-Based Access Control
+
+- Backend APIs now enforce role-based access instead of relying only on frontend route hiding.
+- Maintenance request data is filtered by signed-in role:
+  - Admin / Owner and Property Manager can view all demo requests.
+  - Tenant can view only their own requests.
+  - Maintenance Staff can view only assigned jobs.
+- Tenants can create maintenance requests only for active assigned rental units.
+- Maintenance Staff can update only assigned work to In Progress or Completed.
+- Property and rental unit APIs require Admin / Owner or Property Manager.
+- Frontend dashboards, request controls, assignment dropdowns, and status dropdowns now match the backend role rules.
+- Sprint 9.1 migration: `AddTenantUnitAssignments`.
+
+Validation commands:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
+```
+
+AWS Cognito, production invitations, Amazon RDS cloud connectivity, and cloud deployment remain deferred to later sprints.

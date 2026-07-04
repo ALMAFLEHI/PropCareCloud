@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using PropCareCloud.Api.Data;
+using PropCareCloud.Api.Domain.Enums;
 using PropCareCloud.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -64,7 +65,32 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSigningKey))
         };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly", policy =>
+        policy.RequireRole(nameof(UserRole.AdminOwner)));
+    options.AddPolicy("AdminOrManager", policy =>
+        policy.RequireRole(nameof(UserRole.AdminOwner), nameof(UserRole.PropertyManager)));
+    options.AddPolicy("AdminManagerOrStaff", policy =>
+        policy.RequireRole(
+            nameof(UserRole.AdminOwner),
+            nameof(UserRole.PropertyManager),
+            nameof(UserRole.MaintenanceStaff)));
+    options.AddPolicy("AllRoles", policy =>
+        policy.RequireRole(
+            nameof(UserRole.AdminOwner),
+            nameof(UserRole.PropertyManager),
+            nameof(UserRole.Tenant),
+            nameof(UserRole.MaintenanceStaff)));
+    options.AddPolicy("AllPortalRoles", policy =>
+        policy.RequireRole(
+            nameof(UserRole.AdminOwner),
+            nameof(UserRole.PropertyManager),
+            nameof(UserRole.Tenant),
+            nameof(UserRole.MaintenanceStaff)));
+});
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 if (isDatabaseConfigured)
 {
     builder.Services.AddDbContext<AppDbContext>(options =>

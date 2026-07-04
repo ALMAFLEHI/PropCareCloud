@@ -1,10 +1,12 @@
 import axios from 'axios'
 import type {
+  AssignedUnitResponse,
   AuthUserResponse,
   DemoCredentialResponse,
   HealthResponse,
   LoginRequest,
   LoginResponse,
+  MaintenanceRequestAssignRequest,
   MaintenanceRequestCommentResponse,
   MaintenanceRequestCreateRequest,
   MaintenanceRequestResponse,
@@ -13,6 +15,7 @@ import type {
   PropertyResponse,
   RentalUnitResponse,
   SystemInfoResponse,
+  UserProfileSummaryResponse,
 } from '../types/api'
 import { getToken } from '../utils/authStorage'
 
@@ -141,11 +144,43 @@ export async function updateMaintenanceRequestStatus(
   return response.data
 }
 
+export async function assignMaintenanceRequest(
+  id: string,
+  payload: MaintenanceRequestAssignRequest,
+): Promise<MaintenanceRequestResponse> {
+  const response = await propCareApi.patch<MaintenanceRequestResponse>(
+    `/api/maintenance-requests/${id}/assign`,
+    payload,
+  )
+  return response.data
+}
+
 export async function getMaintenanceRequestComments(
   id: string,
 ): Promise<MaintenanceRequestCommentResponse[]> {
   const response = await propCareApi.get<MaintenanceRequestCommentResponse[]>(
     `/api/maintenance-requests/${id}/comments`,
+  )
+  return response.data
+}
+
+export async function getMaintenanceStaff(): Promise<UserProfileSummaryResponse[]> {
+  const response = await propCareApi.get<UserProfileSummaryResponse[]>(
+    '/api/user-profiles/maintenance-staff',
+  )
+  return response.data
+}
+
+export async function getTenants(): Promise<UserProfileSummaryResponse[]> {
+  const response = await propCareApi.get<UserProfileSummaryResponse[]>(
+    '/api/user-profiles/tenants',
+  )
+  return response.data
+}
+
+export async function getMyAssignedUnits(): Promise<AssignedUnitResponse[]> {
+  const response = await propCareApi.get<AssignedUnitResponse[]>(
+    '/api/user-profiles/me/assigned-units',
   )
   return response.data
 }

@@ -16,6 +16,7 @@ public sealed class UserProfile
     public AuthUserAccount? AuthUserAccount { get; set; }
     public ICollection<MaintenanceRequest> TenantRequests { get; set; } = new List<MaintenanceRequest>();
     public ICollection<MaintenanceRequest> AssignedMaintenanceRequests { get; set; } = new List<MaintenanceRequest>();
+    public ICollection<TenantUnitAssignment> TenantUnitAssignments { get; set; } = new List<TenantUnitAssignment>();
     public ICollection<MaintenanceRequestComment> Comments { get; set; } = new List<MaintenanceRequestComment>();
     public ICollection<MaintenanceRequestAttachment> UploadedAttachments { get; set; } = new List<MaintenanceRequestAttachment>();
 }
