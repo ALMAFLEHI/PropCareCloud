@@ -325,12 +325,12 @@ function ProductMockup() {
                   <p className="mt-3 text-xs leading-5 text-slate-500">
                     Water is leaking under the kitchen sink and needs inspection.
                   </p>
-                  <div className="mt-4 grid gap-2 sm:grid-cols-5">
+                  <div className="mt-4 grid gap-1.5 sm:grid-cols-5">
                     {['Submitted', 'Review', 'Assigned', 'Work', 'Done'].map(
                       (step, index) => (
                         <div
                           key={step}
-                          className={`rounded-md border px-2 py-2 text-center text-[10px] font-semibold ${
+                          className={`min-w-0 rounded-md border px-1 py-2 text-center text-[9px] font-semibold leading-none ${
                             index < 4
                               ? 'border-cyan-200 bg-cyan-50 text-cyan-800'
                               : 'border-slate-200 bg-white text-slate-400'

@@ -287,7 +287,7 @@ function LoginPage() {
             to="/welcome"
             className="mt-5 inline-flex text-sm font-semibold text-cyan-700 hover:text-cyan-800"
           >
-            Back to Welcome
+            Back
           </Link>
         </section>
       </div>
