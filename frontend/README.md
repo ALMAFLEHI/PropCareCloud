@@ -212,6 +212,7 @@ Sprint 11.2 is frontend visual polish only.
 - Improved `/login` with a premium portal visual panel for service requests, progress timeline, and secure access.
 - Logout now returns to `/welcome` after the existing token/user clearing step.
 - No API calls, auth behavior, RBAC behavior, request workflow behavior, or backend functionality changed.
+- Evidence screenshots were captured under `docs/sprints/screenshots/`.
 
 ## Validation
 

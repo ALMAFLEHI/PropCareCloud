@@ -140,16 +140,14 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
 - No real private user data was added.
 - No external image URLs were added.
 
-## Evidence Screenshots Needed Later
+## Final Evidence Captured
 
-- `docs/sprints/screenshots/sprint_11_2_premium_welcome_hero_mockup.png`
+- `docs/sprints/screenshots/sprint_11_2_welcome_hero_mockup.png`
 - `docs/sprints/screenshots/sprint_11_2_how_it_works_section.png`
-- `docs/sprints/screenshots/sprint_11_2_premium_login_portal.png`
-- `docs/sprints/screenshots/sprint_11_2_logout_returns_welcome.png`
-- `docs/sprints/screenshots/sprint_11_2_authenticated_dashboard_unchanged.png`
+- `docs/sprints/screenshots/sprint_11_2_login_portal.png`
 
 ## Final Status
 
-COMPLETE for code.
+COMPLETE.
 
-Sprint 11.2 premium landing storytelling, product mockup, How it Works section, trust/security cues, login portal polish, logout redirect, documentation, validation, and security checks are complete.
+Sprint 11.2 is fully closed. Premium welcome page storytelling, product mockup, How it Works section, trust/security cues, login portal polish, logout redirect, validation, security checks, and evidence screenshots are complete.
