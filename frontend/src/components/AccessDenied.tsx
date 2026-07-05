@@ -7,9 +7,8 @@ function AccessDenied() {
           This page is not available for your role
         </h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          PropCare Cloud protects role-specific sections in both the frontend
-          and backend API. Use the sidebar to open the areas available to the
-          signed-in demo account.
+          PropCare Cloud protects role-specific sections for each account. Use
+          the sidebar to open the areas available to your signed-in role.
         </p>
       </div>
     </div>

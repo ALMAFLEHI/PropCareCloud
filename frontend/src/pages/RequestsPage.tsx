@@ -21,7 +21,9 @@ import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
+import StatusTimeline from '../components/StatusTimeline'
 import { useAuth } from '../context/AuthContext'
+import { Link } from 'react-router-dom'
 import type {
   ApiEnumValue,
   AssignedUnitResponse,
@@ -42,23 +44,23 @@ import {
 
 const requestSteps = [
   {
-    title: 'Tenant request creation',
-    description: 'Tenants can submit requests only for active assigned units.',
+    title: 'Submit Request',
+    description: 'Residents submit maintenance issues for their assigned units.',
     icon: Send,
   },
   {
-    title: 'Manager assignment',
-    description: 'Admins and managers can assign requests to maintenance staff.',
+    title: 'Review & Prioritize',
+    description: 'Managers review incoming work and coordinate the next step.',
     icon: UserCheck,
   },
   {
-    title: 'Staff progress update',
-    description: 'Assigned staff can move work to in progress or completed.',
+    title: 'Assign Staff',
+    description: 'Maintenance teams receive clear ownership for each job.',
     icon: Wrench,
   },
   {
-    title: 'Completion tracking',
-    description: 'Request state stays synchronized with the protected backend API.',
+    title: 'Track Completion',
+    description: 'Everyone can follow progress through to completion.',
     icon: ClipboardCheck,
   },
 ]
@@ -109,24 +111,24 @@ const initialRequestForm = {
 
 const requestPageCopy: Record<UserRoleKey, { title: string; description: string }> = {
   AdminOwner: {
-    title: 'Portfolio request oversight',
+    title: 'Portfolio Request Oversight',
     description:
-      'Review all maintenance records, assign staff, and move requests through the full workflow.',
+      'Monitor maintenance activity across all managed properties.',
   },
   PropertyManager: {
-    title: 'Maintenance request management',
+    title: 'Maintenance Request Management',
     description:
-      'Triage tenant issues, assign maintenance staff, and update request state for the managed portfolio.',
+      'Review, assign, and coordinate maintenance work.',
   },
   Tenant: {
-    title: 'My maintenance requests',
+    title: 'My Maintenance Requests',
     description:
-      'Submit and track maintenance work for active units assigned to your tenant profile.',
+      'Submit issues and monitor repair progress.',
   },
   MaintenanceStaff: {
-    title: 'My assigned jobs',
+    title: 'My Assigned Work',
     description:
-      'Review assigned maintenance work and update jobs to in progress or completed.',
+      'Update job progress and record maintenance activity.',
   },
 }
 
@@ -210,9 +212,7 @@ function RequestsPage() {
           '',
       }))
     } catch {
-      setError(
-        'Maintenance requests could not be loaded. Confirm the backend is running on http://localhost:5015 and your demo account has permission.',
-      )
+      setError('Maintenance requests could not be loaded. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -405,10 +405,10 @@ function RequestsPage() {
       )}
 
       {!isLoading && !error && requests.length === 0 && (
-        <EmptyState
-          title="No maintenance requests found"
-          message="No records are visible for the signed-in role yet."
-        />
+      <EmptyState
+        title="No maintenance requests found"
+          message="No requests are available for this account yet."
+      />
       )}
 
       {!isLoading && requests.length > 0 && (
@@ -416,10 +416,10 @@ function RequestsPage() {
           <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-base font-semibold text-slate-950">
-                Request Records
+                Service Requests
               </h3>
               <p className="mt-1 text-sm text-slate-500">
-                Records and actions are filtered by the authenticated backend role.
+                Requests and actions are matched to your account permissions.
               </p>
             </div>
             <button
@@ -448,6 +448,9 @@ function RequestsPage() {
                   <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-600">
                     {request.description}
                   </p>
+                  <div className="mt-4">
+                    <StatusTimeline status={request.status} compact />
+                  </div>
                   <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
                     <div>
                       <dt className="font-medium text-slate-500">Tenant</dt>
@@ -455,7 +458,10 @@ function RequestsPage() {
                     </div>
                     <div>
                       <dt className="font-medium text-slate-500">Unit</dt>
-                      <dd className="mt-1 text-slate-900">{request.unitNumber}</dd>
+                      <dd className="mt-1 text-slate-900">
+                        {request.propertyName ? `${request.propertyName} - ` : ''}
+                        Unit {request.unitNumber}
+                      </dd>
                     </div>
                     <div>
                       <dt className="font-medium text-slate-500">Category</dt>
@@ -473,6 +479,13 @@ function RequestsPage() {
                 </div>
 
                 <div className="space-y-4 rounded-lg bg-slate-50 p-4">
+                  <Link
+                    to={`/requests/${request.id}`}
+                    className="inline-flex w-full items-center justify-center rounded-md border border-cyan-200 bg-white px-3 py-2 text-sm font-semibold text-cyan-700 hover:bg-cyan-50"
+                  >
+                    {staffRole ? 'View details and add work note' : 'View details'}
+                  </Link>
+
                   {canAssign && (
                     <label className="block">
                       <span className="text-sm font-medium text-slate-700">
@@ -548,8 +561,8 @@ function RequestsPage() {
           title="Add Maintenance Request"
           description={
             tenantRole
-              ? 'Creates a tenant request for one of your active assigned units.'
-              : 'Creates a maintenance request for a selected tenant and rental unit.'
+              ? 'Create a service request for one of your active assigned units.'
+              : 'Create a maintenance request for a selected tenant and rental unit.'
           }
           onClose={() => setIsModalOpen(false)}
         >
@@ -576,7 +589,7 @@ function RequestsPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="block">
                   <span className="text-sm font-medium text-slate-700">
-                    Rental unit ID
+                    Rental unit reference
                   </span>
                   <input
                     required

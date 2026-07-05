@@ -258,4 +258,26 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
 ```
 
-Next sprint: Sprint 11 Production UI/UX Polish & Workflow Enhancements.
+## Sprint 11 Production UI/UX Polish & Workflow Enhancements
+
+- Sprint 11 is complete for code.
+- User-facing UI wording was cleaned so the application reads like a production property maintenance portal instead of sprint documentation.
+- Login, dashboards, properties, requests, and access management screens now use professional product wording.
+- Maintenance request detail route added: `/requests/:id`.
+- Status timeline component added for request progress tracking.
+- Activity notes are available from the request detail page with role-aware visibility.
+- Tenant request views remain read-only for status/assignment controls.
+- Maintenance Staff workflow remains limited to assigned jobs and allowed progress updates.
+- Admin / Owner and Property Manager assignment/status controls remain available.
+- Existing backend RBAC rules remain intact.
+- Evidence screenshots will be captured later under `docs/sprints/screenshots/`.
+
+Validation commands:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
+```
+
+Next sprint: AWS RDS PostgreSQL Setup & Migration.

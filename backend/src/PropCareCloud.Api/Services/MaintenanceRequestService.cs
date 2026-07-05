@@ -373,6 +373,7 @@ public sealed class MaintenanceRequestService(
             request.Id,
             request.RentalUnitId,
             request.RentalUnit == null ? string.Empty : request.RentalUnit.UnitNumber,
+            request.RentalUnit == null || request.RentalUnit.Property == null ? string.Empty : request.RentalUnit.Property.Name,
             request.TenantProfileId,
             request.TenantProfile == null ? string.Empty : request.TenantProfile.FullName,
             request.AssignedStaffProfileId,

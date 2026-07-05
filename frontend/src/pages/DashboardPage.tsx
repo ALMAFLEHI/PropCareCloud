@@ -27,7 +27,7 @@ type DashboardData = {
 const roleCards = [
   {
     title: 'Admin / Owner',
-    description: 'Oversees the platform, property portfolio, and cloud progress.',
+    description: 'Oversees the platform, property portfolio, and service quality.',
     responsibilities: ['Manage ownership view', 'Review reports', 'Track service quality'],
     icon: ShieldCheck,
   },
@@ -87,9 +87,7 @@ function DashboardPage() {
 
       setDashboardData({ properties, requests })
     } catch {
-      setError(
-        'Dashboard data could not be loaded. Start the backend on http://localhost:5015 and try again.',
-      )
+      setError('Dashboard data could not be loaded. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -126,16 +124,14 @@ function DashboardPage() {
       <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <div className="max-w-4xl">
           <p className="text-sm font-semibold text-cyan-700">
-            Sprint 8 Frontend CRUD Integration
+            Portfolio Operations
           </p>
           <h2 className="mt-3 text-3xl font-semibold text-slate-950 sm:text-4xl">
-            Property maintenance and tenant service portal
+            Property Maintenance and Tenant Service Portal
           </h2>
           <p className="mt-4 text-base leading-7 text-slate-600">
-            PropCare Cloud now reads local PostgreSQL-backed property and
-            maintenance request records through the ASP.NET Core Web API while
-            keeping authentication, AWS deployment, and full production workflow
-            features deferred to later sprints.
+            PropCare Cloud helps property teams coordinate service requests,
+            portfolio records, tenant communication, and maintenance work.
           </p>
         </div>
       </section>
@@ -163,13 +159,13 @@ function DashboardPage() {
             <StatCard
               title="Properties"
               value={String(summary.properties)}
-              helperText="Loaded from the Sprint 7 properties API."
+              helperText="Managed portfolio records."
               icon={Building2}
             />
             <StatCard
               title="Active Tenants"
               value={String(summary.activeTenants)}
-              helperText="Distinct seeded tenants from maintenance requests."
+              helperText="Tenants represented in visible requests."
               icon={UsersRound}
             />
             <StatCard
@@ -187,7 +183,7 @@ function DashboardPage() {
                   Recent Maintenance Requests
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Latest records returned by the local CRUD API.
+                  Latest service activity.
                 </p>
               </div>
               <span className="text-sm font-medium text-slate-500">
@@ -233,7 +229,7 @@ function DashboardPage() {
         <div className="mb-4 flex items-center gap-2">
           <UsersRound className="size-5 text-cyan-700" aria-hidden="true" />
           <h2 className="text-xl font-semibold text-slate-950">
-            Planned User Roles
+            User Roles
           </h2>
         </div>
         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
@@ -252,7 +248,7 @@ function DashboardPage() {
             </h2>
           </div>
           <p className="mt-4 rounded-md bg-slate-50 p-4 text-sm font-medium text-slate-700">
-            React Frontend -&gt; ASP.NET Core Web API -&gt; Amazon RDS PostgreSQL
+            React interface -&gt; application services -&gt; PostgreSQL data store
           </p>
         </article>
 
@@ -260,13 +256,12 @@ function DashboardPage() {
           <div className="flex items-center gap-2">
             <Building2 className="size-5 text-indigo-700" aria-hidden="true" />
             <h2 className="text-lg font-semibold text-slate-950">
-              Future AWS Services
+              Platform Services
             </h2>
           </div>
           <p className="mt-4 text-sm leading-6 text-slate-600">
-            Planned cloud extensions include S3, API Gateway, Lambda, SNS/SQS,
-            and CloudWatch/X-Ray for storage, integration, messaging, and
-            observability.
+            The service platform is structured for storage, integration,
+            messaging, monitoring, and observability enhancements.
           </p>
         </article>
       </section>

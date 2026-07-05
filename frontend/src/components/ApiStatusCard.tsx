@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { AlertTriangle, CheckCircle2, Loader2, Server } from 'lucide-react'
-import { apiBaseUrl, getHealth, getSystemInfo } from '../api/propCareApi'
+import { getHealth, getSystemInfo } from '../api/propCareApi'
 import type { HealthResponse, SystemInfoResponse } from '../types/api'
 
 type ApiState =
@@ -33,7 +33,7 @@ function ApiStatusCard() {
           setApiState({
             status: 'error',
             message:
-              'Start the backend using dotnet run if this check fails.',
+              'Service status could not be confirmed. Please try again shortly.',
           })
         }
       }
@@ -52,9 +52,11 @@ function ApiStatusCard() {
         <div>
           <div className="flex items-center gap-2 text-sm font-semibold text-slate-950">
             <Server className="size-4 text-cyan-700" aria-hidden="true" />
-            Backend API Status
+            System Health
           </div>
-          <p className="mt-2 text-sm text-slate-500">{apiBaseUrl}</p>
+          <p className="mt-2 text-sm text-slate-500">
+            Service availability and application status.
+          </p>
         </div>
         {apiState.status === 'loading' && (
           <span className="inline-flex w-fit items-center gap-2 rounded-md bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700">
@@ -79,7 +81,7 @@ function ApiStatusCard() {
       <div className="mt-5 border-t border-slate-200 pt-5">
         {apiState.status === 'loading' && (
           <p className="text-sm text-slate-500">
-            Checking the Sprint 2 health and system information endpoints.
+            Checking service availability.
           </p>
         )}
 
@@ -98,13 +100,13 @@ function ApiStatusCard() {
             </div>
             <div>
               <p className="text-xs font-semibold uppercase text-slate-500">
-                System Info
+                Application
               </p>
               <p className="mt-2 text-sm font-medium text-slate-950">
                 {apiState.systemInfo.applicationName}
               </p>
               <p className="mt-1 text-xs text-slate-500">
-                {apiState.systemInfo.module} - {apiState.systemInfo.environment}
+                {apiState.systemInfo.module}
               </p>
             </div>
           </div>
@@ -113,7 +115,7 @@ function ApiStatusCard() {
         {apiState.status === 'error' && (
           <div>
             <p className="text-sm font-medium text-slate-950">
-              Backend connection failed.
+              Service connection failed.
             </p>
             <p className="mt-2 text-sm text-slate-500">{apiState.message}</p>
           </div>

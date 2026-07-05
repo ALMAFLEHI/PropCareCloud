@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Building2, DoorOpen, MapPinned, Plus, RefreshCcw } from 'lucide-react'
+import { Building2, DoorOpen, Home, Plus, RefreshCcw, Wrench } from 'lucide-react'
 import { createProperty, getProperties, getUnitsByProperty } from '../api/propCareApi'
 import EmptyState from '../components/EmptyState'
 import ErrorState from '../components/ErrorState'
@@ -34,6 +34,20 @@ function PropertiesPage() {
     () => properties.find((property) => property.id === selectedPropertyId),
     [properties, selectedPropertyId],
   )
+  const totalUnits = useMemo(
+    () => properties.reduce((total, property) => total + property.unitCount, 0),
+    [properties],
+  )
+  const occupiedUnits = useMemo(
+    () =>
+      units.filter((unit) => String(unit.status).toLowerCase() === '1' || String(unit.status).toLowerCase().includes('occupied')).length,
+    [units],
+  )
+  const unitsUnderMaintenance = useMemo(
+    () =>
+      units.filter((unit) => String(unit.status).toLowerCase() === '2' || String(unit.status).toLowerCase().includes('maintenance')).length,
+    [units],
+  )
 
   async function loadProperties() {
     setIsLoading(true)
@@ -50,9 +64,7 @@ function PropertiesPage() {
         return data[0]?.id ?? ''
       })
     } catch {
-      setError(
-        'Properties could not be loaded. Confirm the backend is running on http://localhost:5015.',
-      )
+      setError('Properties could not be loaded. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -121,12 +133,10 @@ function PropertiesPage() {
               Properties and Units
             </p>
             <h2 className="mt-3 text-3xl font-semibold text-slate-950">
-              Live property management
+              Property Portfolio
             </h2>
             <p className="mt-4 text-base leading-7 text-slate-600">
-              This screen reads Sprint 7 property records from the backend,
-              displays their rental units, and supports creating a new property
-              through the local CRUD API.
+              Review managed properties, rental units, and occupancy status.
             </p>
           </div>
           <button
@@ -140,7 +150,7 @@ function PropertiesPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <Building2 className="size-6 text-cyan-700" aria-hidden="true" />
           <h3 className="mt-4 text-base font-semibold text-slate-950">
@@ -153,19 +163,28 @@ function PropertiesPage() {
         <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <DoorOpen className="size-6 text-indigo-700" aria-hidden="true" />
           <h3 className="mt-4 text-base font-semibold text-slate-950">
-            Selected Units
+            Units
           </h3>
           <p className="mt-3 text-2xl font-semibold text-slate-950">
-            {units.length}
+            {totalUnits}
           </p>
         </article>
         <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <MapPinned className="size-6 text-emerald-700" aria-hidden="true" />
+          <Home className="size-6 text-emerald-700" aria-hidden="true" />
           <h3 className="mt-4 text-base font-semibold text-slate-950">
-            Data Source
+            Occupied units
           </h3>
-          <p className="mt-3 text-sm leading-6 text-slate-600">
-            ASP.NET Core Web API with local PostgreSQL validation.
+          <p className="mt-3 text-2xl font-semibold text-slate-950">
+            {occupiedUnits}
+          </p>
+        </article>
+        <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <Wrench className="size-6 text-amber-700" aria-hidden="true" />
+          <h3 className="mt-4 text-base font-semibold text-slate-950">
+            Under maintenance
+          </h3>
+          <p className="mt-3 text-2xl font-semibold text-slate-950">
+            {unitsUnderMaintenance}
           </p>
         </article>
       </section>
@@ -184,7 +203,7 @@ function PropertiesPage() {
       {!isLoading && !error && properties.length === 0 && (
         <EmptyState
           title="No properties found"
-          message="Create a property to verify the frontend POST integration."
+          message="Create a property to begin building the portfolio."
         />
       )}
 
@@ -256,7 +275,7 @@ function PropertiesPage() {
                 {selectedProperty?.name ?? 'Rental Units'}
               </h3>
               <p className="mt-1 text-sm text-slate-500">
-                Units are loaded from `/api/properties/{'{propertyId}'}/units`.
+                Unit details for the selected property.
               </p>
             </div>
 
@@ -311,7 +330,7 @@ function PropertiesPage() {
       {isModalOpen && (
         <Modal
           title="Add Property"
-          description="Creates a new local property record through the Sprint 7 API."
+          description="Create a property record for the managed portfolio."
           onClose={() => setIsModalOpen(false)}
         >
           <form className="space-y-4" onSubmit={handleCreateProperty}>

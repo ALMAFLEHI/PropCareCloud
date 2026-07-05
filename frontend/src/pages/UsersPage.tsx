@@ -160,7 +160,7 @@ function UsersPage() {
       setError(
         getErrorMessage(
           loadError,
-          'Access management data could not be loaded. Confirm the backend is running and the signed-in account is an Admin / Owner.',
+          'Access management data could not be loaded. Confirm the signed-in account has Admin / Owner access.',
         ),
       )
     } finally {
@@ -342,7 +342,7 @@ function UsersPage() {
               Admin User & Access Management
             </h2>
             <p className="mt-4 text-base leading-7 text-slate-600">
-              Manage operational accounts, account availability, passwords, and tenant unit assignments from a protected admin console.
+              Manage operational accounts, account availability, password resets, and tenant unit assignments.
             </p>
           </div>
           <button
@@ -409,7 +409,7 @@ function UsersPage() {
                 User Accounts
               </h3>
               <p className="mt-1 text-sm text-slate-500">
-                Account actions are enforced by the admin-only backend API.
+                Manage profile, status, and password actions for operational accounts.
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">

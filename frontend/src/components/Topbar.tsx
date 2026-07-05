@@ -15,14 +15,16 @@ function Topbar() {
             <h1 className="text-lg font-semibold text-slate-950">
               PropCare Cloud
             </h1>
-            <p className="text-sm text-slate-500">Sprint 9 Role-Based Auth</p>
+            <p className="text-sm text-slate-500">
+              Property Maintenance Portal
+            </p>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           <div className="inline-flex w-fit items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">
             <CircleCheck className="size-4" aria-hidden="true" />
-            <span>Local Development</span>
+            <span>Secure Portal</span>
           </div>
           {user && (
             <div className="inline-flex w-fit items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">

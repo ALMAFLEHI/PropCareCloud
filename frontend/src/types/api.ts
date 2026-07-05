@@ -55,6 +55,7 @@ export type MaintenanceRequestResponse = {
   id: string
   rentalUnitId: string
   unitNumber: string
+  propertyName?: string | null
   tenantProfileId: string
   tenantName: string
   assignedStaffProfileId?: string | null
@@ -86,6 +87,12 @@ export type MaintenanceRequestStatusUpdateRequest = {
 
 export type MaintenanceRequestAssignRequest = {
   assignedStaffProfileId: string
+}
+
+export type MaintenanceRequestCommentCreateRequest = {
+  userProfileId: string
+  commentText: string
+  isInternal: boolean
 }
 
 export type MaintenanceRequestCommentResponse = {

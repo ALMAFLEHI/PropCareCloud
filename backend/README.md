@@ -287,6 +287,16 @@ Tenant assignment rules:
 - Ending an assignment keeps historical data and makes the unit available again.
 - No real secrets, password hashes, or connection strings are exposed by these endpoints.
 
+## Sprint 11 Request Workflow Polish Support
+
+Sprint 11 keeps the existing schema and RBAC rules intact while supporting the polished request detail workflow.
+
+- `MaintenanceRequestResponse` now includes `PropertyName` for richer request detail displays.
+- Existing request detail endpoint `GET /api/maintenance-requests/{id}` is used by the frontend detail page.
+- Existing comment endpoints support activity notes in the frontend.
+- Tenant, staff, manager, and admin request visibility continues to use the Sprint 9.1 role filters.
+- Backend tests cover property name projection, tenant comment visibility, internal-note restrictions, and maintenance staff request-detail isolation.
+
 ## Notes
 
 Real RDS connectivity, AWS Cognito, production password reset, email invitation flow, and AWS deployment will be added in later sprints. No production secrets, AWS credentials, or real database connection strings are configured in this sprint.

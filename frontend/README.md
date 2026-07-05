@@ -51,9 +51,10 @@ The app reads `VITE_API_BASE_URL` and falls back to `http://localhost:5015`.
 
 ## Current Pages and Routes
 
-- `/login` - Demo login page with role credentials
+- `/login` - Clean sign-in page with assessment credentials in a collapsible helper
 - `/` - Role-based dashboard with live property/request data
-- `/requests` - Maintenance request list, create form using seeded IDs, and status update dropdown
+- `/requests` - Role-specific maintenance request workflow
+- `/requests/:id` - Request detail page with status timeline and activity notes
 - `/properties` - Property list, selected property unit list, and create property form for Admin / Owner and Property Manager
 - `/users` - Admin-only users and roles page
 
@@ -167,6 +168,25 @@ Sprint 10 API calls:
 - `POST /api/admin/users/tenant-assignments`
 - `PATCH /api/admin/users/tenant-assignments/{assignmentId}/end`
 - `GET /api/admin/users/available-units`
+
+## Sprint 11 Production UI and Workflow Polish
+
+Sprint 11 updates the frontend to feel like a polished property maintenance portal.
+
+- Topbar branding now uses `Property Maintenance Portal` with no sprint label.
+- Login page is clean and keeps assessment credentials in a compact collapsible helper.
+- Role dashboards use production wording and role-specific summary cards.
+- Requests page has role-specific page titles, cleaner workflow copy, compact progress timelines, and detail links.
+- Request detail page added at `/requests/:id`.
+- `StatusTimeline` component added for Submitted, Under Review, Assigned, In Progress, Completed, and Cancelled states.
+- Activity notes can be viewed and added from the request detail page.
+- Properties and Access Management pages no longer use sprint/demo wording in the main UI.
+
+Sprint 11 API calls added to the frontend:
+
+- `GET /api/maintenance-requests/{id}`
+- `GET /api/maintenance-requests/{id}/comments`
+- `POST /api/maintenance-requests/{id}/comments`
 
 ## Validation
 

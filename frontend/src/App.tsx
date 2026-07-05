@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import { AuthProvider } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import PropertiesPage from './pages/PropertiesPage'
+import RequestDetailPage from './pages/RequestDetailPage'
 import RequestsPage from './pages/RequestsPage'
 import RoleDashboardPage from './pages/RoleDashboardPage'
 import UsersPage from './pages/UsersPage'
@@ -23,6 +24,7 @@ function App() {
           >
             <Route index element={<RoleDashboardPage />} />
             <Route path="requests" element={<RequestsPage />} />
+            <Route path="requests/:id" element={<RequestDetailPage />} />
             <Route
               path="properties"
               element={

@@ -7,7 +7,7 @@ type LoadingStateProps = {
 
 function LoadingState({
   title = 'Loading data',
-  message = 'Fetching the latest records from the local backend.',
+  message = 'Fetching the latest records.',
 }: LoadingStateProps) {
   return (
     <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">

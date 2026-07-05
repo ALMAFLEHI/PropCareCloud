@@ -10,31 +10,31 @@ const fallbackCredentials: DemoCredentialResponse[] = [
     role: 'Admin / Owner',
     email: 'admin@propcare.demo',
     password: 'PropCare@Admin123',
-    purpose: 'Full portfolio and user oversight demo account.',
+    purpose: 'Portfolio and user oversight access.',
   },
   {
     role: 'Property Manager',
     email: 'manager@propcare.demo',
     password: 'PropCare@Manager123',
-    purpose: 'Property and maintenance workflow demo account.',
+    purpose: 'Property and maintenance workflow access.',
   },
   {
     role: 'Tenant - Sara',
     email: 'tenant@propcare.demo',
     password: 'PropCare@Tenant123',
-    purpose: 'Primary tenant demo account for assigned-unit request isolation.',
+    purpose: 'Tenant service portal access.',
   },
   {
     role: 'Tenant - Imran',
     email: 'imran@propcare.demo',
     password: 'PropCare@Imran123',
-    purpose: 'Secondary tenant isolation demo account with separate unit and request data.',
+    purpose: 'Tenant service portal access.',
   },
   {
     role: 'Maintenance Staff',
     email: 'staff@propcare.demo',
     password: 'PropCare@Staff123',
-    purpose: 'Maintenance work queue demo account.',
+    purpose: 'Assigned work access.',
   },
 ]
 
@@ -48,8 +48,8 @@ function LoginPage() {
   const { isAuthenticated, login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const [email, setEmail] = useState('admin@propcare.demo')
-  const [password, setPassword] = useState('PropCare@Admin123')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [credentials, setCredentials] = useState(fallbackCredentials)
   const [isLoadingCredentials, setIsLoadingCredentials] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -101,7 +101,7 @@ function LoginPage() {
       setError(
         loginError instanceof Error
           ? loginError.message
-          : 'Login failed. Check the selected demo credentials.',
+          : 'Sign in failed. Check the email and password, then try again.',
       )
     } finally {
       setIsSubmitting(false)
@@ -110,10 +110,10 @@ function LoginPage() {
 
   return (
     <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+      <div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-5xl items-center gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="space-y-6">
           <div className="flex items-center gap-3">
-            <div className="flex size-12 items-center justify-center rounded-lg bg-cyan-700 text-white">
+            <div className="flex size-12 items-center justify-center rounded-lg bg-cyan-700 text-white shadow-sm">
               <Building2 className="size-6" aria-hidden="true" />
             </div>
             <div>
@@ -121,12 +121,40 @@ function LoginPage() {
                 PropCare Cloud
               </h1>
               <p className="text-sm text-slate-500">
-                Cloud-based property maintenance and tenant service portal
+                Property Maintenance Portal
               </p>
             </div>
           </div>
 
-          <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+          <div>
+            <p className="text-sm font-semibold text-cyan-700">
+              Secure account access
+            </p>
+            <h2 className="mt-3 text-4xl font-semibold tracking-normal text-slate-950">
+              Sign in to manage maintenance work with confidence.
+            </h2>
+            <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
+              Access your property maintenance dashboard.
+            </p>
+          </div>
+        </section>
+
+        <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-semibold text-slate-950">
+                Welcome back
+              </h2>
+              <p className="mt-2 text-sm text-slate-500">
+                Enter your account details to continue.
+              </p>
+            </div>
+            <div className="flex size-11 items-center justify-center rounded-md bg-emerald-50 text-emerald-700">
+              <ShieldCheck className="size-5" aria-hidden="true" />
+            </div>
+          </div>
+
+          <form className="mt-7 space-y-5" onSubmit={handleSubmit}>
             <label className="block">
               <span className="text-sm font-medium text-slate-700">Email</span>
               <input
@@ -168,56 +196,34 @@ function LoginPage() {
               Sign in
             </button>
           </form>
-        </section>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-cyan-700">
-                Assignment Demo Credentials
-              </p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-950">
-                Five role-based demo accounts
-              </h2>
-            </div>
-            <div className="flex size-11 items-center justify-center rounded-md bg-emerald-50 text-emerald-700">
-              <ShieldCheck className="size-5" aria-hidden="true" />
-            </div>
-          </div>
-
-          <div className="mt-6 grid gap-3">
-            {credentials.map((credential) => (
-              <button
-                key={credential.email}
-                type="button"
-                onClick={() => useCredential(credential)}
-                className="rounded-lg border border-slate-200 bg-white p-4 text-left transition hover:border-cyan-300 hover:bg-cyan-50"
-              >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-slate-950">
-                      {credential.role}
-                    </p>
-                    <p className="mt-1 text-sm text-slate-600">
-                      {credential.email}
-                    </p>
-                  </div>
-                  <span className="inline-flex w-fit rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
-                    Use account
+          <details className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <summary className="cursor-pointer text-sm font-semibold text-slate-700">
+              Use provided assessment credentials
+            </summary>
+            <div className="mt-4 grid gap-2">
+              {credentials.map((credential) => (
+                <button
+                  key={credential.email}
+                  type="button"
+                  onClick={() => useCredential(credential)}
+                  className="rounded-md border border-slate-200 bg-white p-3 text-left text-sm transition hover:border-cyan-300 hover:bg-cyan-50"
+                >
+                  <span className="font-semibold text-slate-950">
+                    {credential.role}
                   </span>
-                </div>
-                <p className="mt-3 text-xs leading-5 text-slate-500">
-                  {credential.purpose}
-                </p>
-              </button>
-            ))}
-          </div>
-
-          <p className="mt-4 text-xs text-slate-500">
-            {isLoadingCredentials
-              ? 'Loading demo credential metadata from the backend...'
-              : 'Demo passwords are assignment-only credentials. Stored backend passwords use BCrypt hashes.'}
-          </p>
+                  <span className="mt-1 block text-slate-600">
+                    {credential.email}
+                  </span>
+                </button>
+              ))}
+            </div>
+            <p className="mt-3 text-xs text-slate-500">
+              {isLoadingCredentials
+                ? 'Loading credential options...'
+                : 'Select a role to fill the form for local assessment.'}
+            </p>
+          </details>
         </section>
       </div>
     </main>

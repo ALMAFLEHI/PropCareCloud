@@ -24,6 +24,7 @@ public sealed class MaintenanceRequestServiceTests
         Assert.Single(requests);
         Assert.Equal("Air conditioner issue", requests[0].Title);
         Assert.Equal("A-0201", requests[0].UnitNumber);
+        Assert.Equal("Cloud Residence", requests[0].PropertyName);
     }
 
     [Fact]
@@ -158,6 +159,57 @@ public sealed class MaintenanceRequestServiceTests
     }
 
     [Fact]
+    public async Task GetCommentsAsync_HidesInternalCommentsFromTenants()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedMaintenanceGraphAsync(dbContext);
+        dbContext.MaintenanceRequestComments.AddRange(
+            new MaintenanceRequestComment
+            {
+                MaintenanceRequestId = seed.Request!.Id,
+                UserProfileId = seed.Manager.Id,
+                UserProfile = seed.Manager,
+                CommentText = "Internal scheduling note",
+                IsInternal = true
+            },
+            new MaintenanceRequestComment
+            {
+                MaintenanceRequestId = seed.Request.Id,
+                UserProfileId = seed.Tenant.Id,
+                UserProfile = seed.Tenant,
+                CommentText = "Visible tenant note",
+                IsInternal = false
+            });
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext, seed.Tenant.Id, UserRole.Tenant);
+
+        var comments = await service.GetCommentsAsync(seed.Request.Id);
+
+        Assert.Single(comments);
+        Assert.Equal("Visible tenant note", comments[0].CommentText);
+    }
+
+    [Fact]
+    public async Task AddCommentAsync_TenantCannotCreateInternalComment()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedMaintenanceGraphAsync(dbContext);
+        var service = CreateService(dbContext, seed.Tenant.Id, UserRole.Tenant);
+
+        var comment = await service.AddCommentAsync(seed.Request!.Id, new MaintenanceRequestCommentCreateRequest
+        {
+            UserProfileId = seed.Tenant.Id,
+            CommentText = "This should not become internal.",
+            IsInternal = true
+        });
+
+        Assert.Null(comment);
+        Assert.Empty(dbContext.MaintenanceRequestComments);
+    }
+
+    [Fact]
     public async Task GetRequestsAsync_TenantSeesOnlyOwnRequests()
     {
         var options = CreateOptions();
@@ -250,6 +302,19 @@ public sealed class MaintenanceRequestServiceTests
 
         Assert.Single(requests);
         Assert.Equal(seed.Staff.Id, requests[0].AssignedStaffProfileId);
+    }
+
+    [Fact]
+    public async Task GetRequestByIdAsync_MaintenanceStaffCannotFetchUnassignedRequest()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedMaintenanceGraphAsync(dbContext);
+        var service = CreateService(dbContext, seed.Staff.Id, UserRole.MaintenanceStaff);
+
+        var request = await service.GetRequestByIdAsync(seed.Request!.Id);
+
+        Assert.Null(request);
     }
 
     [Fact]

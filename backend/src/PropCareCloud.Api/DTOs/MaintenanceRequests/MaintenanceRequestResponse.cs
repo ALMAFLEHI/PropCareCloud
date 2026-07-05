@@ -6,6 +6,7 @@ public sealed record MaintenanceRequestResponse(
     Guid Id,
     Guid RentalUnitId,
     string UnitNumber,
+    string PropertyName,
     Guid TenantProfileId,
     string TenantName,
     Guid? AssignedStaffProfileId,

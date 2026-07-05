@@ -11,6 +11,7 @@ import type {
   LoginRequest,
   LoginResponse,
   MaintenanceRequestAssignRequest,
+  MaintenanceRequestCommentCreateRequest,
   MaintenanceRequestCommentResponse,
   MaintenanceRequestCreateRequest,
   MaintenanceRequestResponse,
@@ -171,6 +172,17 @@ export async function getMaintenanceRequestComments(
 ): Promise<MaintenanceRequestCommentResponse[]> {
   const response = await propCareApi.get<MaintenanceRequestCommentResponse[]>(
     `/api/maintenance-requests/${id}/comments`,
+  )
+  return response.data
+}
+
+export async function addMaintenanceRequestComment(
+  id: string,
+  payload: MaintenanceRequestCommentCreateRequest,
+): Promise<MaintenanceRequestCommentResponse> {
+  const response = await propCareApi.post<MaintenanceRequestCommentResponse>(
+    `/api/maintenance-requests/${id}/comments`,
+    payload,
   )
   return response.data
 }
