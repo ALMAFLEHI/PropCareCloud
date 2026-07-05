@@ -345,4 +345,23 @@ powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-rds-api-readiness.p
 powershell -ExecutionPolicy Bypass -File .\scripts\aws\seed-rds-demo-data.ps1
 ```
 
-Next sprint: Sprint 13 AWS Deployment.
+## Sprint 13 AWS Deployment Preparation
+
+- Sprint 13 deployment preparation is complete for code support.
+- Backend deployment readiness supports RDS environment variables, configurable CORS origins, and cloud port binding.
+- Frontend deployment readiness keeps `VITE_API_BASE_URL` configuration for production builds.
+- Backend and frontend deployment package scripts were added under `scripts/aws/`.
+- Deployment readiness validation was added with secret and configuration checks.
+- AWS deployment plan documentation was added under `docs/architecture/`.
+- Manual AWS deployment and evidence screenshots are still pending.
+
+Validation commands:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-sprint13-deployment-readiness.ps1
+```
+
+Next manual step: AWS deployment and evidence capture.

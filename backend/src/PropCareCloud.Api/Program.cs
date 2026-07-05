@@ -11,6 +11,13 @@ var builder = WebApplication.CreateBuilder(args);
 const string frontendDevelopmentPolicy = "FrontendDevelopment";
 const string developmentOnlyJwtSigningKey =
     "DevelopmentOnlyJwtSigningKeyForLocalDemo_DoNotUseInProduction";
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(port) &&
+    string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("ASPNETCORE_URLS")))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrWhiteSpace(connectionString))
 {
@@ -21,6 +28,12 @@ var isDatabaseConfigured = !string.IsNullOrWhiteSpace(connectionString);
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "PropCareCloud";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "PropCareCloud.Frontend";
 var jwtSigningKey = builder.Configuration["Jwt:SigningKey"];
+var configuredAllowedOrigins = (Environment.GetEnvironmentVariable("PROPCLOUD_ALLOWED_ORIGINS") ?? string.Empty)
+    .Split([',', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+var allowedOrigins = new[] { "http://localhost:5173" }
+    .Concat(configuredAllowedOrigins)
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToArray();
 if (string.IsNullOrWhiteSpace(jwtSigningKey))
 {
     // Development-only fallback for the local assignment demo. Do not use in production.
@@ -111,7 +124,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy(frontendDevelopmentPolicy, policy =>
     {
         policy
-            .WithOrigins("http://localhost:5173")
+            .WithOrigins(allowedOrigins)
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
