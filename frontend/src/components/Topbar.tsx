@@ -1,8 +1,15 @@
 import { CircleCheck, Cloud, LogOut, UserRound } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 function Topbar() {
   const { logout, user } = useAuth()
+  const navigate = useNavigate()
+
+  function handleLogout() {
+    logout()
+    navigate('/welcome', { replace: true })
+  }
 
   return (
     <header className="border-b border-slate-200/80 bg-white/90 px-4 py-4 shadow-sm backdrop-blur sm:px-6 lg:px-8">
@@ -37,7 +44,7 @@ function Topbar() {
           )}
           <button
             type="button"
-            onClick={logout}
+            onClick={handleLogout}
             className="inline-flex w-fit items-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
             <LogOut className="size-4" aria-hidden="true" />

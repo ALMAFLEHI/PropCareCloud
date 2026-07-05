@@ -298,4 +298,24 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
 ```
 
+## Sprint 11.2 Premium Landing & Portal Visual Storytelling
+
+- Sprint 11.2 is complete for code.
+- Premium landing page storytelling improved on `/welcome`.
+- CSS/JSX-only product mockup visual added to preview the service request workflow.
+- How it Works section added for report, assign, and track flow.
+- Trust/security cues added for role-based access, tenant privacy, manager oversight, staff assignment tracking, and activity history.
+- Login portal visual presentation improved with a visual-only side panel.
+- Logout now returns users to `/welcome` after the existing token/user clearing step.
+- No backend, API, database, authentication, RBAC, or business functionality changes were made.
+- Evidence screenshots will be captured later under `docs/sprints/screenshots/`.
+
+Validation commands:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
+```
+
 Next sprint: AWS RDS PostgreSQL Setup & Migration.

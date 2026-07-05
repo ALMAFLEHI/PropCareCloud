@@ -201,6 +201,18 @@ Sprint 11.1 is frontend visual polish only.
 - Cleaned the remaining visible request wording that sounded implementation-focused.
 - No API calls, auth behavior, RBAC behavior, or backend functionality changed.
 
+## Sprint 11.2 Premium Landing and Portal Storytelling
+
+Sprint 11.2 is frontend visual polish only.
+
+- Improved `/welcome` with stronger premium landing page storytelling.
+- Added a CSS/JSX-only product mockup visual for the property maintenance workflow.
+- Added a How it Works section for report, assign, and track flow.
+- Added trust/security cues for secure role-based access, tenant privacy, manager oversight, staff assignment tracking, and activity history.
+- Improved `/login` with a premium portal visual panel for service requests, progress timeline, and secure access.
+- Logout now returns to `/welcome` after the existing token/user clearing step.
+- No API calls, auth behavior, RBAC behavior, request workflow behavior, or backend functionality changed.
+
 ## Validation
 
 From the project root:

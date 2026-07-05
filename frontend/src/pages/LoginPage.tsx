@@ -1,6 +1,15 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Building2, KeyRound, Loader2, ShieldCheck } from 'lucide-react'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import {
+  Building2,
+  CheckCircle2,
+  ClipboardList,
+  KeyRound,
+  Loader2,
+  LockKeyhole,
+  ShieldCheck,
+  Wrench,
+} from 'lucide-react'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { getDemoCredentials } from '../api/propCareApi'
 import { useAuth } from '../context/AuthContext'
 import type { DemoCredentialResponse } from '../types/api'
@@ -109,8 +118,8 @@ function LoginPage() {
   }
 
   return (
-    <main className="premium-auth-shell min-h-screen px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
-      <div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-5xl items-center gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+    <main className="premium-auth-shell blueprint-surface min-h-screen px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
+      <div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-6xl items-center gap-6 lg:grid-cols-[1fr_0.95fr]">
         <section className="space-y-6">
           <div className="flex items-center gap-3">
             <div className="flex size-12 items-center justify-center rounded-xl bg-cyan-700 text-white shadow-lg shadow-cyan-900/20">
@@ -136,6 +145,55 @@ function LoginPage() {
             <p className="mt-4 max-w-xl text-base leading-7 text-slate-600">
               Access your property maintenance dashboard.
             </p>
+          </div>
+
+          <div className="premium-panel p-5">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-200 pb-4">
+              <div>
+                <p className="text-sm font-semibold text-slate-950">
+                  Portal workspace
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Requests, progress, and access in one secure view.
+                </p>
+              </div>
+              <span className="rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800 ring-1 ring-inset ring-emerald-200">
+                Secure
+              </span>
+            </div>
+
+            <div className="mt-5 grid gap-3">
+              <PortalPreviewItem
+                icon={ClipboardList}
+                title="Service requests"
+                text="Submit and review maintenance issues by property unit."
+              />
+              <PortalPreviewItem
+                icon={Wrench}
+                title="Progress timeline"
+                text="Follow assignment, work status, notes, and completion."
+              />
+              <PortalPreviewItem
+                icon={LockKeyhole}
+                title="Secure access"
+                text="Each account opens the right operational workspace."
+              />
+            </div>
+
+            <div className="mt-5 grid grid-cols-5 gap-2">
+              {['Submit', 'Review', 'Assign', 'Work', 'Done'].map((step, index) => (
+                <div
+                  key={step}
+                  className={`rounded-md border px-2 py-2 text-center text-[10px] font-semibold ${
+                    index < 4
+                      ? 'border-cyan-200 bg-cyan-50 text-cyan-800'
+                      : 'border-slate-200 bg-white/80 text-slate-400'
+                  }`}
+                >
+                  {step}
+                </div>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -224,9 +282,41 @@ function LoginPage() {
                 : 'Select a credential to fill the form for assessment.'}
             </p>
           </details>
+
+          <Link
+            to="/welcome"
+            className="mt-5 inline-flex text-sm font-semibold text-cyan-700 hover:text-cyan-800"
+          >
+            Back to Welcome
+          </Link>
         </section>
       </div>
     </main>
+  )
+}
+
+function PortalPreviewItem({
+  icon: Icon,
+  title,
+  text,
+}: {
+  icon: typeof ClipboardList
+  title: string
+  text: string
+}) {
+  return (
+    <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-white/80 p-3 shadow-sm">
+      <div className="mt-0.5 flex size-9 items-center justify-center rounded-md bg-cyan-50 text-cyan-700">
+        <Icon className="size-4" aria-hidden="true" />
+      </div>
+      <div>
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-semibold text-slate-950">{title}</p>
+          <CheckCircle2 className="size-3.5 text-emerald-600" aria-hidden="true" />
+        </div>
+        <p className="mt-1 text-xs leading-5 text-slate-500">{text}</p>
+      </div>
+    </div>
   )
 }
 
