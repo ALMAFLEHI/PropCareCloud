@@ -12,6 +12,11 @@ const string frontendDevelopmentPolicy = "FrontendDevelopment";
 const string developmentOnlyJwtSigningKey =
     "DevelopmentOnlyJwtSigningKeyForLocalDemo_DoNotUseInProduction";
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    connectionString = Environment.GetEnvironmentVariable("PROPCLOUD_CONNECTION_STRING");
+}
+
 var isDatabaseConfigured = !string.IsNullOrWhiteSpace(connectionString);
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "PropCareCloud";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "PropCareCloud.Frontend";

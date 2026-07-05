@@ -14,8 +14,11 @@ public sealed class DatabaseReadinessService(
 {
     public async Task<DatabaseReadiness> GetReadinessAsync(CancellationToken cancellationToken = default)
     {
-        var connectionStringConfigured = !string.IsNullOrWhiteSpace(
-            configuration.GetConnectionString("DefaultConnection"));
+        var defaultConnection = configuration.GetConnectionString("DefaultConnection");
+        var environmentConnection = Environment.GetEnvironmentVariable("PROPCLOUD_CONNECTION_STRING");
+        var connectionStringConfigured =
+            !string.IsNullOrWhiteSpace(defaultConnection) ||
+            !string.IsNullOrWhiteSpace(environmentConnection);
         var dbContext = serviceProvider.GetService<AppDbContext>();
         var appDbContextRegistered = dbContext is not null;
 

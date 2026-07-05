@@ -54,6 +54,8 @@ credentials
 config.local
 *.pem
 *.key
+*.pfx
+*.publishsettings
 
 # Logs
 logs/
@@ -67,3 +69,7 @@ logs/
 *.dump
 *.sql
 local-data/
+rds-connection*.ps1
+rds-connection*.txt
+connection-string*.txt
+local-secrets*.ps1

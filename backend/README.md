@@ -297,6 +297,19 @@ Sprint 11 keeps the existing schema and RBAC rules intact while supporting the p
 - Tenant, staff, manager, and admin request visibility continues to use the Sprint 9.1 role filters.
 - Backend tests cover property name projection, tenant comment visibility, internal-note restrictions, and maintenance staff request-detail isolation.
 
+## Sprint 12 AWS RDS PostgreSQL Support
+
+Sprint 12 adds safe Amazon RDS PostgreSQL migration and validation support.
+
+- RDS PostgreSQL connection uses `PROPCLOUD_CONNECTION_STRING`.
+- The committed `appsettings.json` keeps `ConnectionStrings:DefaultConnection` empty.
+- Do not store RDS connection strings in committed config.
+- Do not commit database passwords, AWS keys, private keys, `.env` files, or production JWT secrets.
+- Use `scripts/aws/update-rds-database.ps1` to apply EF Core migrations to the configured RDS database.
+- Use `scripts/aws/check-rds-api-readiness.ps1` to validate the running API against RDS.
+- Use `scripts/aws/seed-rds-demo-data.ps1` to seed RDS demo data after migrations and API startup.
+- Manual AWS RDS creation and evidence screenshots are still pending.
+
 ## Notes
 
-Real RDS connectivity, AWS Cognito, production password reset, email invitation flow, and AWS deployment will be added in later sprints. No production secrets, AWS credentials, or real database connection strings are configured in this sprint.
+AWS Cognito, production password reset, email invitation flow, and AWS deployment will be added in later sprints. No production secrets, AWS credentials, or real database connection strings are committed.

@@ -318,4 +318,31 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
 ```
 
-Next sprint: AWS RDS PostgreSQL Setup & Migration.
+## Sprint 12 AWS RDS PostgreSQL Setup & Migration
+
+- Sprint 12 adds AWS RDS PostgreSQL setup support.
+- Safe Amazon RDS PostgreSQL setup documentation was added under `docs/architecture/`.
+- Safe RDS helper scripts were added under `scripts/aws/`.
+- The backend can use `PROPCLOUD_CONNECTION_STRING` for RDS migration and local API runtime validation.
+- No real database passwords, AWS credentials, private keys, or `.env` files are committed.
+- Actual AWS RDS creation, migration evidence, seed evidence, and screenshots are still pending manual setup.
+
+Validation commands:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
+```
+
+RDS support commands:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-aws-cli.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\aws\validate-rds-environment.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\aws\update-rds-database.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-rds-api-readiness.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\aws\seed-rds-demo-data.ps1
+```
+
+Next sprint after Sprint 12 evidence: AWS Deployment or S3 Attachment Upload depending on the project plan.
