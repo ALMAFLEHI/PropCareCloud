@@ -128,18 +128,35 @@ The RDS checklist requires a real RDS connection string and manual AWS setup bef
 - RDS connection strings must be supplied through environment variables only.
 - Screenshots must not show passwords, AWS keys, private keys, or production JWT secrets.
 
-## Evidence Screenshots Needed
+## Final Evidence Captured
 
-- AWS RDS instance status showing Available.
-- RDS endpoint/details with no password visible.
-- Security group inbound rule showing restricted IP access.
-- Migration command success.
-- `/api/database/readiness` connected to RDS.
-- Seed demo data success.
-- Frontend dashboard showing RDS-backed data.
+- `docs/sprints/screenshots/sprint_12_rds_instance_available.png`
+- `docs/sprints/screenshots/sprint_12_rds_endpoint_details.png`
+- `docs/sprints/screenshots/sprint_12_rds_security_group_restricted_ip.png`
+- `docs/sprints/screenshots/sprint_12_rds_migration_success.png`
+- `docs/sprints/screenshots/sprint_12_rds_api_readiness.png`
+- `docs/sprints/screenshots/sprint_12_frontend_rds_backed_dashboard.png`
+
+## Manual Validation Results
+
+- RDS instance created successfully.
+- RDS status: Available.
+- Engine: PostgreSQL.
+- Instance class: `db.t3.micro`.
+- Database name: `propcarecloud_db`.
+- Public accessibility enabled for local migration testing.
+- Security group inbound PostgreSQL `5432` restricted to one `/32` IP.
+- EF Core migrations applied successfully.
+- API readiness passed.
+- `canConnect`: true.
+- Pending migrations: 0.
+- Applied migrations: 4.
+- Demo seed endpoint passed and skipped duplicates because data already existed.
+- Demo auth accounts confirmed ready.
+- Frontend dashboard loaded live RDS-backed data.
 
 ## Final Status
 
-CODE SUPPORT COMPLETE.
+COMPLETE.
 
-Manual AWS RDS creation, migration, seed validation, and screenshots are still pending.
+Sprint 12 is fully closed. AWS RDS PostgreSQL setup, migration, API readiness validation, seed validation, frontend RDS-backed dashboard validation, security checks, and evidence screenshots are complete.

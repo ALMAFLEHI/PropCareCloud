@@ -142,6 +142,19 @@ Capture only screenshots that do not expose passwords, AWS keys, or private cred
 - Seed demo data success.
 - Frontend dashboard showing RDS-backed data.
 
+## Sprint 12 Completion Note
+
+Sprint 12 AWS RDS PostgreSQL setup was completed manually and evidence was captured under `docs/sprints/screenshots/`.
+
+Validated Sprint 12 results:
+
+- RDS PostgreSQL instance reached Available status.
+- EF Core migrations were applied to RDS.
+- API readiness connected successfully with 0 pending migrations and 4 applied migrations.
+- Demo seed validation passed and skipped duplicates because data already existed.
+- Frontend dashboard loaded RDS-backed data.
+- No password, connection string, AWS key, private key, or `.env` file is committed.
+
 ## Cleanup And Cost Warning
 
 RDS resources can create AWS charges. Verify the AWS billing dashboard and AWS cost settings before and after creating resources.
