@@ -1,4 +1,4 @@
-# Sprint 13 - AWS Deployment Preparation
+# Sprint 13 - AWS Deployment Preparation and Seed Repair
 
 ## Sprint Goal
 
@@ -25,6 +25,34 @@ Planned AWS deployment options:
 - Safe backend and frontend package scripts were added under `scripts/aws/`.
 - A combined deployment readiness script was added.
 - No AWS resources are created, updated, or deleted by these scripts.
+
+## Demo Seed Repair Update
+
+During normal AWS deployment, demo authentication accounts existed but the portfolio seed data was empty. The dashboard showed active users, but properties, units, occupied-unit assignments, maintenance requests, comments, and attachment metadata were missing.
+
+Root cause:
+
+- `POST /api/auth/ensure-demo-accounts` created the five demo login accounts and profiles.
+- The previous `POST /api/seed/demo-data` logic skipped all seeding when any `UserProfile` already existed.
+- Because the auth endpoint ran first in AWS, the portfolio data was considered already seeded even though it was incomplete.
+
+Seed repair completed:
+
+- `POST /api/seed/demo-data` now behaves as an idempotent repair operation.
+- It ensures the five demo account-backed profiles are present.
+- It repairs or creates the demo properties, rental units, tenant-unit assignments, maintenance requests, comments/activity notes, and attachment metadata.
+- Running the endpoint repeatedly does not duplicate demo portfolio records.
+- Running the endpoint after `POST /api/auth/ensure-demo-accounts` repairs the missing portfolio data.
+- The seed response now reports success, created/repaired status, created row counts, repaired row count, and final totals.
+
+After uploading the rebuilt backend package to Elastic Beanstalk, run:
+
+```text
+POST /api/seed/demo-data
+POST /api/auth/ensure-demo-accounts
+```
+
+Then verify the deployed frontend dashboard, properties, requests, and access management pages show seeded data.
 
 ## Backend Package Process
 
@@ -130,10 +158,11 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-sprint13-deployment-readiness.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-sprint13-demo-data.ps1
 ```
 
 ## Final Status
 
-CODE SUPPORT COMPLETE.
+SEED REPAIR CODE SUPPORT COMPLETE.
 
-Manual AWS deployment and Sprint 13 evidence screenshots are still pending.
+Manual upload of the rebuilt backend package and final deployed demo-data verification are still pending.

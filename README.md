@@ -353,7 +353,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\aws\seed-rds-demo-data.ps1
 - Backend and frontend deployment package scripts were added under `scripts/aws/`.
 - Deployment readiness validation was added with secret and configuration checks.
 - AWS deployment plan documentation was added under `docs/architecture/`.
-- Manual AWS deployment and evidence screenshots are still pending.
+- Sprint 13 seed repair code was added after AWS validation showed demo auth accounts existed but portfolio data was empty.
+- `POST /api/seed/demo-data` now repairs missing properties, units, tenant assignments, requests, comments, and attachment metadata without duplicating existing demo rows.
+- After uploading the rebuilt backend package, run `POST /api/seed/demo-data` and `POST /api/auth/ensure-demo-accounts`, then verify dashboard, properties, requests, and access management in the deployed frontend.
+- Manual upload of the rebuilt backend package and final deployed demo-data verification are still pending.
 
 Validation commands:
 
@@ -362,6 +365,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-sprint13-deployment-readiness.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-sprint13-demo-data.ps1
 ```
 
-Next manual step: AWS deployment and evidence capture.
+Next manual step: upload the rebuilt backend package to Elastic Beanstalk and run the deployed seed repair check.
