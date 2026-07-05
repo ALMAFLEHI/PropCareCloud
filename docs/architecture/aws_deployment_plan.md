@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document describes the planned AWS deployment shape for PropCare Cloud after Sprint 12 RDS setup.
+This document describes the AWS deployment shape used for PropCare Cloud after Sprint 12 RDS setup and Sprint 13 deployment.
 
 ## Simple Deployment Architecture
 
@@ -13,12 +13,15 @@ User browser
   -> Amazon RDS PostgreSQL
 ```
 
-## Backend Deployment Option
+## Backend Deployment
 
-The ASP.NET Core API can be deployed using either:
+The selected backend deployment target is AWS Elastic Beanstalk.
 
-- AWS Elastic Beanstalk for a managed application environment.
-- EC2 for a manually managed Windows or Linux host.
+Live backend API:
+
+```text
+http://propcarecloud-api.us-east-1.elasticbeanstalk.com
+```
 
 The backend deployment package is produced by:
 
@@ -26,11 +29,17 @@ The backend deployment package is produced by:
 powershell -ExecutionPolicy Bypass -File .\scripts\aws\build-sprint13-backend-package.ps1
 ```
 
-The package is created locally only. The script does not create, update, or delete AWS resources.
+The package is created locally only. The script does not create, update, or delete AWS resources. The package is uploaded manually as an Elastic Beanstalk application version.
 
-## Frontend Deployment Option
+## Frontend Deployment
 
-The React/Vite frontend can be hosted as static files, for example with Amazon S3 static website hosting or another AWS-hosted frontend option.
+The selected frontend deployment target is Amazon S3 static website hosting.
+
+Live frontend website:
+
+```text
+http://propcarecloud-frontend-20260706.s3-website-us-east-1.amazonaws.com
+```
 
 The frontend build is produced by:
 
@@ -48,7 +57,19 @@ Upload only the generated `frontend/dist` files during manual deployment.
 
 ## RDS Connection
 
-The deployed backend connects to Amazon RDS PostgreSQL through environment variables.
+The deployed backend connects to Amazon RDS PostgreSQL through Elastic Beanstalk environment variables.
+
+Database provider:
+
+```text
+Amazon RDS PostgreSQL in us-east-1
+```
+
+Database name:
+
+```text
+propcarecloud_db
+```
 
 Required backend variable:
 
@@ -72,13 +93,19 @@ Local development remains allowed:
 http://localhost:5173
 ```
 
-Deployed frontend origins should be configured through:
+The deployed S3 frontend origin is allowed through:
 
 ```text
 PROPCLOUD_ALLOWED_ORIGINS
 ```
 
-Use comma or semicolon separation if more than one frontend origin is needed. Do not hard-code a fake production URL as the only allowed origin.
+Use comma or semicolon separation if more than one frontend origin is needed. The deployed frontend origin was configured so the S3-hosted UI can call the Elastic Beanstalk API.
+
+## Network Security
+
+- RDS PostgreSQL remains protected by security group rules.
+- PostgreSQL port `5432` is allowed from the Elastic Beanstalk EC2 security group for backend-to-database access.
+- Local migration/testing access should remain limited and removed when no longer needed.
 
 ## Security Notes
 
@@ -89,13 +116,13 @@ Use comma or semicolon separation if more than one frontend origin is needed. Do
 - Keep screenshots masked when showing environment variables.
 - Confirm RDS security group rules are limited to the intended source.
 - Keep local validation working before and after deployment preparation.
+- Delete AWS resources after assignment submission if they are no longer needed.
 
-## Screenshots To Capture Later
+## Sprint 13 Evidence Captured
 
-- Backend deployed `/api/health` response.
-- Backend deployed `/api/database/readiness` response connected to RDS.
-- Deployed frontend welcome page.
-- Deployed frontend login page.
-- Admin dashboard using the deployed backend.
-- AWS deployment service status.
-- Deployment environment variables with secret values masked.
+- `docs/sprints/screenshots/sprint_13_backend_deployed_health.png`
+- `docs/sprints/screenshots/sprint_13_backend_database_readiness_deployed.png`
+- `docs/sprints/screenshots/sprint_13_frontend_deployed_welcome.png`
+- `docs/sprints/screenshots/sprint_13_frontend_deployed_login.png`
+- `docs/sprints/screenshots/sprint_13_live_dashboard_admin.png`
+- `docs/sprints/screenshots/sprint_13_aws_deployment_service_status.png`

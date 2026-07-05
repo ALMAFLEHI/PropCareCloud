@@ -1,8 +1,8 @@
-$ErrorActionPreference = "Continue"
-
 param(
-    [string]$ApiBaseUrl = "http://localhost:5015"
+    [string]$ApiBaseUrl = "http://propcarecloud-api.us-east-1.elasticbeanstalk.com"
 )
+
+$ErrorActionPreference = "Continue"
 
 function Write-Result {
     param(

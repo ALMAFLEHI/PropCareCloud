@@ -1,8 +1,8 @@
-# Sprint 13 - AWS Deployment Preparation and Seed Repair
+# Sprint 13 - AWS Deployment
 
 ## Sprint Goal
 
-Prepare PropCare Cloud for AWS deployment by adding deployment-ready configuration, local packaging scripts, deployment readiness checks, and documentation without creating AWS resources automatically.
+Deploy PropCare Cloud to AWS using Elastic Beanstalk for the backend, Amazon S3 static website hosting for the frontend, and Amazon RDS PostgreSQL for the database.
 
 ## Target Architecture
 
@@ -10,11 +10,11 @@ Prepare PropCare Cloud for AWS deployment by adding deployment-ready configurati
 React/Vite frontend hosted on AWS -> ASP.NET Core Web API hosted on AWS -> Amazon RDS PostgreSQL
 ```
 
-Planned AWS deployment options:
+Final AWS deployment:
 
-- Backend: Elastic Beanstalk or EC2 running the ASP.NET Core Web API.
-- Frontend: Amazon S3 static website hosting or another AWS-hosted frontend option.
-- Database: existing Amazon RDS PostgreSQL from Sprint 12.
+- Backend: AWS Elastic Beanstalk running the ASP.NET Core Web API.
+- Frontend: Amazon S3 static website hosting.
+- Database: Amazon RDS PostgreSQL in `us-east-1`.
 
 ## Deployment Preparation Completed
 
@@ -25,6 +25,22 @@ Planned AWS deployment options:
 - Safe backend and frontend package scripts were added under `scripts/aws/`.
 - A combined deployment readiness script was added.
 - No AWS resources are created, updated, or deleted by these scripts.
+
+## Final Deployment Summary
+
+- A normal AWS account was used instead of AWS Academy because Academy reset resources during the deployment work.
+- Amazon RDS PostgreSQL was created in `us-east-1`.
+- The backend was deployed using AWS Elastic Beanstalk.
+- The frontend was deployed using Amazon S3 static website hosting.
+- The backend connected to RDS successfully.
+- The deployed frontend login and dashboard work from the S3 website URL.
+- The Sprint 13 seed repair was deployed and verified.
+- Demo properties, units, users, tenant-unit assignments, and maintenance requests now show correctly in the deployed admin dashboard.
+
+## Final Live URLs
+
+- Backend API: `http://propcarecloud-api.us-east-1.elasticbeanstalk.com`
+- Frontend website: `http://propcarecloud-frontend-20260706.s3-website-us-east-1.amazonaws.com`
 
 ## Demo Seed Repair Update
 
@@ -45,14 +61,28 @@ Seed repair completed:
 - Running the endpoint after `POST /api/auth/ensure-demo-accounts` repairs the missing portfolio data.
 - The seed response now reports success, created/repaired status, created row counts, repaired row count, and final totals.
 
-After uploading the rebuilt backend package to Elastic Beanstalk, run:
+After uploading the rebuilt backend package to Elastic Beanstalk, the deployed seed and demo-account endpoints were run:
 
 ```text
 POST /api/seed/demo-data
 POST /api/auth/ensure-demo-accounts
 ```
 
-Then verify the deployed frontend dashboard, properties, requests, and access management pages show seeded data.
+The deployed frontend dashboard, properties, requests, and access management pages were then verified with seeded data.
+
+## Final Validation Results
+
+- Backend `/api/health` works on the deployed Elastic Beanstalk API.
+- Backend `/api/database/readiness` works on the deployed Elastic Beanstalk API.
+- Database readiness returned `canConnect: true`.
+- Database readiness returned `pendingMigrations: 0`.
+- Database readiness returned `appliedMigrations: 4`.
+- Deployed seed repair completed successfully.
+- Admin dashboard shows seeded demo data:
+  - Open requests: `4`
+  - Properties: `2`
+  - Active users: `5`
+  - High priority requests: `1`
 
 ## Backend Package Process
 
@@ -107,27 +137,7 @@ Frontend build variable:
 
 Do not commit any real values.
 
-## Manual AWS Console Steps Placeholder
-
-The user will perform the AWS deployment manually after this preparation sprint.
-
-Backend deployment outline:
-
-1. Choose Elastic Beanstalk or EC2 for the ASP.NET Core API.
-2. Upload the backend package from `artifacts/deployment/backend/PropCareCloud.Api.zip`.
-3. Configure environment variables in AWS with masked/hidden values.
-4. Confirm `/api/health` responds.
-5. Confirm `/api/database/readiness` connects to RDS.
-6. Confirm `/api/system-info` responds without exposing secrets.
-
-Frontend deployment outline:
-
-1. Build the frontend with `VITE_API_BASE_URL` pointing to the deployed backend.
-2. Upload the contents of `frontend/dist` to the selected AWS frontend hosting target.
-3. Configure frontend hosting access and routing.
-4. Confirm the welcome page, login page, and authenticated dashboard work with the deployed backend.
-
-## Evidence Screenshots Needed
+## Final Evidence Captured
 
 - `docs/sprints/screenshots/sprint_13_backend_deployed_health.png`
 - `docs/sprints/screenshots/sprint_13_backend_database_readiness_deployed.png`
@@ -135,9 +145,8 @@ Frontend deployment outline:
 - `docs/sprints/screenshots/sprint_13_frontend_deployed_login.png`
 - `docs/sprints/screenshots/sprint_13_live_dashboard_admin.png`
 - `docs/sprints/screenshots/sprint_13_aws_deployment_service_status.png`
-- `docs/sprints/screenshots/sprint_13_deployment_environment_variables_masked.png`
 
-The environment variable screenshot must not show secret values.
+The AWS account-identifying area in the service status screenshot was masked before commit. The S3 website URL is visible in the deployed welcome/login screenshots, and the RDS readiness result is visible in the deployed database-readiness screenshot.
 
 ## Security Checklist
 
@@ -150,6 +159,8 @@ The environment variable screenshot must not show secret values.
 - `appsettings.json` keeps an empty `DefaultConnection`.
 - Deployment secrets are configured only in AWS environment variables.
 - Screenshots must mask or hide secret values.
+- Budget alert was created before deployment.
+- Resources should be deleted after assignment submission if they are no longer needed.
 
 ## Validation Commands
 
@@ -163,6 +174,6 @@ powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-sprint13-demo-data.
 
 ## Final Status
 
-SEED REPAIR CODE SUPPORT COMPLETE.
+COMPLETE.
 
-Manual upload of the rebuilt backend package and final deployed demo-data verification are still pending.
+Sprint 13 AWS deployment is fully closed. Elastic Beanstalk backend deployment, S3 frontend deployment, RDS PostgreSQL connectivity, deployed API validation, seed repair verification, admin dashboard validation, documentation, security checks, and final evidence screenshots are complete.
