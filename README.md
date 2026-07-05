@@ -280,4 +280,22 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
 ```
 
+## Sprint 11.1 Premium Visual Theme & Public Landing Page
+
+- Sprint 11.1 is complete for code.
+- General public landing page added at `/welcome`.
+- Premium visual theme layer added across the React frontend.
+- Login and app UI were visually polished with softer surfaces, shadows, transitions, and teal/navy accents.
+- Remaining visible developer-style request wording was cleaned up.
+- No backend, API, database, authentication, RBAC, or business functionality changes were made.
+- Evidence screenshots will be captured later under `docs/sprints/screenshots/`.
+
+Validation commands:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
+```
+
 Next sprint: AWS RDS PostgreSQL Setup & Migration.

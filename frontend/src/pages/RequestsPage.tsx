@@ -166,7 +166,7 @@ function RequestsPage() {
   const canCreate = canCreateMaintenanceRequest(user)
   const canAssign = canAssignRequests(user)
   const allowedStatusValues = getAllowedStatusValues(user)
-  const seededRequest = requests[0]
+  const defaultRequest = requests[0]
 
   const openRequests = useMemo(
     () =>
@@ -232,12 +232,12 @@ function RequestsPage() {
       rentalUnitId:
         current.rentalUnitId ||
         assignedUnits[0]?.rentalUnitId ||
-        seededRequest?.rentalUnitId ||
+        defaultRequest?.rentalUnitId ||
         '',
       tenantProfileId:
         current.tenantProfileId ||
         (tenantRole ? user?.userProfileId : tenants[0]?.id) ||
-        seededRequest?.tenantProfileId ||
+        defaultRequest?.tenantProfileId ||
         '',
     }))
     setIsModalOpen(true)
@@ -314,7 +314,7 @@ function RequestsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="premium-hero-card p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold text-cyan-700">
@@ -348,7 +348,7 @@ function RequestsPage() {
           return (
             <article
               key={step.title}
-              className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"
+              className="premium-card p-5"
             >
               <div className="flex size-10 items-center justify-center rounded-md bg-cyan-50 text-cyan-700">
                 <Icon className="size-5" aria-hidden="true" />
@@ -365,7 +365,7 @@ function RequestsPage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-3">
-        <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <article className="premium-card p-5">
           <p className="text-sm font-medium text-slate-500">
             {staffRole ? 'Assigned Requests' : 'Visible Requests'}
           </p>
@@ -373,13 +373,13 @@ function RequestsPage() {
             {requests.length}
           </p>
         </article>
-        <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <article className="premium-card p-5">
           <p className="text-sm font-medium text-slate-500">Open Requests</p>
           <p className="mt-3 text-3xl font-semibold text-slate-950">
             {openRequests}
           </p>
         </article>
-        <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <article className="premium-card p-5">
           <p className="text-sm font-medium text-slate-500">
             {tenantRole ? 'Assigned Units' : 'Assignment Options'}
           </p>
@@ -405,14 +405,14 @@ function RequestsPage() {
       )}
 
       {!isLoading && !error && requests.length === 0 && (
-      <EmptyState
-        title="No maintenance requests found"
+        <EmptyState
+          title="No maintenance requests found"
           message="No requests are available for this account yet."
-      />
+        />
       )}
 
       {!isLoading && requests.length > 0 && (
-        <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <section className="premium-panel overflow-hidden">
           <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h3 className="text-base font-semibold text-slate-950">
@@ -478,10 +478,10 @@ function RequestsPage() {
                   </dl>
                 </div>
 
-                <div className="space-y-4 rounded-lg bg-slate-50 p-4">
+                <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50/80 p-4">
                   <Link
                     to={`/requests/${request.id}`}
-                    className="inline-flex w-full items-center justify-center rounded-md border border-cyan-200 bg-white px-3 py-2 text-sm font-semibold text-cyan-700 hover:bg-cyan-50"
+                    className="inline-flex w-full items-center justify-center rounded-md border border-cyan-200 bg-white px-3 py-2 text-sm font-semibold text-cyan-700 transition hover:-translate-y-0.5 hover:bg-cyan-50 hover:shadow-sm"
                   >
                     {staffRole ? 'View details and add work note' : 'View details'}
                   </Link>
@@ -537,7 +537,7 @@ function RequestsPage() {
                         Status tracking
                       </p>
                       <p className="mt-2 text-sm leading-6 text-slate-600">
-                        This role can view request progress but cannot update status.
+                        You can follow progress and add notes from request details.
                       </p>
                     </div>
                   )}

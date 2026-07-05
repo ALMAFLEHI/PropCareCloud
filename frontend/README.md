@@ -52,6 +52,7 @@ The app reads `VITE_API_BASE_URL` and falls back to `http://localhost:5015`.
 ## Current Pages and Routes
 
 - `/login` - Clean sign-in page with assessment credentials in a collapsible helper
+- `/welcome` - Public landing page for the property maintenance portal
 - `/` - Role-based dashboard with live property/request data
 - `/requests` - Role-specific maintenance request workflow
 - `/requests/:id` - Request detail page with status timeline and activity notes
@@ -187,6 +188,18 @@ Sprint 11 API calls added to the frontend:
 - `GET /api/maintenance-requests/{id}`
 - `GET /api/maintenance-requests/{id}/comments`
 - `POST /api/maintenance-requests/{id}/comments`
+
+## Sprint 11.1 Premium Theme and Public Landing Page
+
+Sprint 11.1 is frontend visual polish only.
+
+- Added public landing page at `/welcome`.
+- Added premium light teal/navy visual theme classes.
+- Improved login page visual presentation while preserving the same form behavior.
+- Added softer app background, card shadows, hover transitions, and glass-style panels.
+- Polished dashboard, requests, request detail, properties, access management, topbar, and sidebar visuals.
+- Cleaned the remaining visible request wording that sounded implementation-focused.
+- No API calls, auth behavior, RBAC behavior, or backend functionality changed.
 
 ## Validation
 

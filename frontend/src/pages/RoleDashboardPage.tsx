@@ -350,7 +350,7 @@ function RoleDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="premium-hero-card p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-4xl">
             <p className="text-sm font-semibold text-cyan-700">{copy.eyebrow}</p>
@@ -421,7 +421,7 @@ function RoleDashboardPage() {
                   <Link
                     key={action.label}
                     to={action.to}
-                    className="rounded-lg border border-slate-200 p-4 text-sm font-semibold text-slate-950 hover:border-cyan-300 hover:bg-cyan-50"
+                    className="premium-lift rounded-lg border border-slate-200 bg-white/70 p-4 text-sm font-semibold text-slate-950 hover:bg-cyan-50"
                   >
                     {action.label}
                   </Link>

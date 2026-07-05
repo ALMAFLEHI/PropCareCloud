@@ -2,6 +2,7 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import AppLayout from './components/AppLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import { AuthProvider } from './context/AuthContext'
+import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import PropertiesPage from './pages/PropertiesPage'
 import RequestDetailPage from './pages/RequestDetailPage'
@@ -14,6 +15,7 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="welcome" element={<LandingPage />} />
           <Route path="login" element={<LoginPage />} />
           <Route
             element={

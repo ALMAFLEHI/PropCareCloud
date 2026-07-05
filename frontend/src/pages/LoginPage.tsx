@@ -109,11 +109,11 @@ function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
+    <main className="premium-auth-shell min-h-screen px-4 py-8 text-slate-950 sm:px-6 lg:px-8">
       <div className="mx-auto grid min-h-[calc(100vh-4rem)] w-full max-w-5xl items-center gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         <section className="space-y-6">
           <div className="flex items-center gap-3">
-            <div className="flex size-12 items-center justify-center rounded-lg bg-cyan-700 text-white shadow-sm">
+            <div className="flex size-12 items-center justify-center rounded-xl bg-cyan-700 text-white shadow-lg shadow-cyan-900/20">
               <Building2 className="size-6" aria-hidden="true" />
             </div>
             <div>
@@ -127,7 +127,7 @@ function LoginPage() {
           </div>
 
           <div>
-            <p className="text-sm font-semibold text-cyan-700">
+            <p className="premium-eyebrow">
               Secure account access
             </p>
             <h2 className="mt-3 text-4xl font-semibold tracking-normal text-slate-950">
@@ -139,7 +139,7 @@ function LoginPage() {
           </div>
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <section className="premium-hero-card p-6 sm:p-8">
           <div className="flex items-start justify-between gap-4">
             <div>
               <h2 className="text-2xl font-semibold text-slate-950">
@@ -186,7 +186,7 @@ function LoginPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-cyan-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-cyan-700 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-900/20 transition hover:-translate-y-0.5 hover:bg-cyan-800 disabled:cursor-not-allowed disabled:bg-slate-400 disabled:shadow-none"
             >
               {isSubmitting ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />
@@ -197,7 +197,7 @@ function LoginPage() {
             </button>
           </form>
 
-          <details className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
+          <details className="mt-6 rounded-lg border border-slate-200 bg-slate-50/80 p-4">
             <summary className="cursor-pointer text-sm font-semibold text-slate-700">
               Use provided assessment credentials
             </summary>
@@ -207,7 +207,7 @@ function LoginPage() {
                   key={credential.email}
                   type="button"
                   onClick={() => useCredential(credential)}
-                  className="rounded-md border border-slate-200 bg-white p-3 text-left text-sm transition hover:border-cyan-300 hover:bg-cyan-50"
+                  className="rounded-md border border-slate-200 bg-white p-3 text-left text-sm transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-sm"
                 >
                   <span className="font-semibold text-slate-950">
                     {credential.role}
@@ -221,7 +221,7 @@ function LoginPage() {
             <p className="mt-3 text-xs text-slate-500">
               {isLoadingCredentials
                 ? 'Loading credential options...'
-                : 'Select a role to fill the form for local assessment.'}
+                : 'Select a credential to fill the form for assessment.'}
             </p>
           </details>
         </section>

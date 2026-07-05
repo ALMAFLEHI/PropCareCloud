@@ -238,7 +238,7 @@ function RequestDetailPage() {
         </button>
       </div>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="premium-hero-card p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-4xl">
             <p className="text-sm font-semibold text-cyan-700">
@@ -255,7 +255,7 @@ function RequestDetailPage() {
               {request.description}
             </p>
           </div>
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+          <div className="rounded-lg border border-slate-200 bg-white/80 p-4 text-sm text-slate-600 shadow-sm">
             <p className="font-semibold text-slate-950">
               {getPriorityLabel(request.priority)} priority
             </p>
@@ -284,7 +284,7 @@ function RequestDetailPage() {
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-5">
-          <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <article className="premium-card p-5">
             <h3 className="text-lg font-semibold text-slate-950">
               Service Progress
             </h3>
@@ -293,7 +293,7 @@ function RequestDetailPage() {
             </div>
           </article>
 
-          <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <article className="premium-card p-5">
             <h3 className="text-lg font-semibold text-slate-950">
               Request Details
             </h3>
@@ -313,7 +313,7 @@ function RequestDetailPage() {
             </dl>
           </article>
 
-          <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <article className="premium-card p-5">
             <div className="flex items-center gap-2">
               <MessageSquare className="size-5 text-cyan-700" aria-hidden="true" />
               <h3 className="text-lg font-semibold text-slate-950">
@@ -387,7 +387,7 @@ function RequestDetailPage() {
         </div>
 
         <aside className="space-y-5">
-          <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <article className="premium-card p-5">
             <div className="flex items-center gap-2">
               <UserCheck className="size-5 text-cyan-700" aria-hidden="true" />
               <h3 className="text-lg font-semibold text-slate-950">

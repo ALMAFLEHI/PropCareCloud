@@ -332,7 +332,7 @@ function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="premium-hero-card p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold text-cyan-700">
@@ -365,7 +365,7 @@ function UsersPage() {
         <SummaryCard title="Staff accounts" value={summary.staffAccounts} icon={UserCog} />
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-2 shadow-sm">
+      <section className="premium-panel p-2">
         <div className="flex flex-wrap gap-2">
           {tabs.map((tab) => (
             <button
@@ -402,7 +402,7 @@ function UsersPage() {
       {isLoading && <LoadingState title="Loading access management" />}
 
       {!isLoading && activeTab === 'accounts' && (
-        <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+        <section className="premium-panel overflow-hidden">
           <div className="flex flex-col gap-4 border-b border-slate-200 px-5 py-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <h3 className="text-base font-semibold text-slate-950">
@@ -518,7 +518,7 @@ function UsersPage() {
       )}
 
       {!isLoading && activeTab === 'create' && (
-        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <section className="premium-card p-5">
           <div className="flex items-center gap-2">
             <UserPlus className="size-5 text-cyan-700" aria-hidden="true" />
             <h3 className="text-base font-semibold text-slate-950">
@@ -589,7 +589,7 @@ function UsersPage() {
 
       {!isLoading && activeTab === 'assignments' && (
         <section className="grid gap-5 xl:grid-cols-[380px_1fr]">
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="premium-card p-5">
             <div className="flex items-center gap-2">
               <Building2 className="size-5 text-cyan-700" aria-hidden="true" />
               <h3 className="text-base font-semibold text-slate-950">
@@ -653,7 +653,7 @@ function UsersPage() {
             </form>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="premium-panel overflow-hidden">
             <div className="border-b border-slate-200 px-5 py-4">
               <h3 className="text-base font-semibold text-slate-950">
                 Tenant Unit Assignments
@@ -833,7 +833,7 @@ function SummaryCard({
   icon: typeof UsersRound
 }) {
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <article className="premium-card p-5">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-medium text-slate-500">{title}</p>
         <div className="flex size-10 items-center justify-center rounded-md bg-cyan-50 text-cyan-700">
@@ -864,7 +864,7 @@ function AccessRuleCard({
   icon: typeof ShieldCheck
 }) {
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <article className="premium-card p-5">
       <div className="flex size-10 items-center justify-center rounded-md bg-cyan-50 text-cyan-700">
         <Icon className="size-5" aria-hidden="true" />
       </div>

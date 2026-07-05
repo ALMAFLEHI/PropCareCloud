@@ -9,7 +9,7 @@ type StatCardProps = {
 
 function StatCard({ title, value, helperText, icon: Icon }: StatCardProps) {
   return (
-    <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+    <article className="premium-card p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-slate-500">{title}</p>

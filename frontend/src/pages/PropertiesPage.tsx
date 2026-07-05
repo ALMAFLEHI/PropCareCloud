@@ -126,7 +126,7 @@ function PropertiesPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="premium-hero-card p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-3xl">
             <p className="text-sm font-semibold text-cyan-700">
@@ -151,7 +151,7 @@ function PropertiesPage() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <article className="premium-card p-5">
           <Building2 className="size-6 text-cyan-700" aria-hidden="true" />
           <h3 className="mt-4 text-base font-semibold text-slate-950">
             Properties
@@ -160,7 +160,7 @@ function PropertiesPage() {
             {properties.length}
           </p>
         </article>
-        <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <article className="premium-card p-5">
           <DoorOpen className="size-6 text-indigo-700" aria-hidden="true" />
           <h3 className="mt-4 text-base font-semibold text-slate-950">
             Units
@@ -169,7 +169,7 @@ function PropertiesPage() {
             {totalUnits}
           </p>
         </article>
-        <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <article className="premium-card p-5">
           <Home className="size-6 text-emerald-700" aria-hidden="true" />
           <h3 className="mt-4 text-base font-semibold text-slate-950">
             Occupied units
@@ -178,7 +178,7 @@ function PropertiesPage() {
             {occupiedUnits}
           </p>
         </article>
-        <article className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+        <article className="premium-card p-5">
           <Wrench className="size-6 text-amber-700" aria-hidden="true" />
           <h3 className="mt-4 text-base font-semibold text-slate-950">
             Under maintenance
@@ -209,7 +209,7 @@ function PropertiesPage() {
 
       {!isLoading && !error && properties.length > 0 && (
         <section className="grid gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-          <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="premium-panel overflow-hidden">
             <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-5 py-4">
               <div>
                 <h3 className="text-base font-semibold text-slate-950">
@@ -269,7 +269,7 @@ function PropertiesPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white shadow-sm">
+          <div className="premium-panel overflow-hidden">
             <div className="border-b border-slate-200 px-5 py-4">
               <h3 className="text-base font-semibold text-slate-950">
                 {selectedProperty?.name ?? 'Rental Units'}
