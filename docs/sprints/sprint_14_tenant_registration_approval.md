@@ -81,6 +81,7 @@ Fixes added:
 - Approval now rejects rental units that are not `Available`.
 - Login page `Request tenant access` was moved into a modern `New tenant?` secondary CTA block.
 - Welcome page `Request tenant access` was moved out of the crowded main hero CTA row into a separate premium tenant access panel.
+- Final login UX polish maps invalid credentials to a user-friendly message instead of a technical 401 error.
 - No Task 2 services were added. Sprint 14 remains Task 1 frontend/backend/RDS functionality.
 
 ## Database Migration

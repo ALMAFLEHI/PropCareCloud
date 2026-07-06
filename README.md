@@ -409,6 +409,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-sprint13-demo-data.
 - The approval available-units endpoint now returns only unassigned units with `Available` status.
 - Login page tenant access CTA was moved into a modern `New tenant?` secondary CTA block.
 - Welcome page tenant access CTA was moved out of the crowded hero CTA row into a separate premium panel.
+- Final login UX polish maps invalid credentials to a user-friendly message instead of a technical 401 error.
 - Sprint 14 migration: `AddTenantRegistrationRequests`.
 - No AWS resources were created, updated, or deployed automatically.
 - No API Gateway, Lambda, S3 maintenance attachments, SNS/SQS, CloudWatch, or X-Ray work was added in Sprint 14.

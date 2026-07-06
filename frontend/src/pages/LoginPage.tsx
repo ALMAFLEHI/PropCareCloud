@@ -1,3 +1,4 @@
+import axios from 'axios'
 import { useEffect, useState, type FormEvent } from 'react'
 import {
   Building2,
@@ -54,6 +55,20 @@ type LocationState = {
   }
 }
 
+function getLoginErrorMessage(error: unknown) {
+  if (axios.isAxiosError(error)) {
+    if (error.response?.status === 401) {
+      return 'Invalid email or password. Please check your credentials and try again.'
+    }
+
+    if (!error.response) {
+      return 'Unable to connect to the server. Please try again later.'
+    }
+  }
+
+  return 'Sign in failed. Please try again.'
+}
+
 function LoginPage() {
   const { isAuthenticated, login } = useAuth()
   const navigate = useNavigate()
@@ -108,11 +123,7 @@ function LoginPage() {
       await login(email, password)
       navigate(from, { replace: true })
     } catch (loginError) {
-      setError(
-        loginError instanceof Error
-          ? loginError.message
-          : 'Sign in failed. Check the email and password, then try again.',
-      )
+      setError(getLoginErrorMessage(loginError))
     } finally {
       setIsSubmitting(false)
     }
