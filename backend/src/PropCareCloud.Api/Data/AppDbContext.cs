@@ -13,6 +13,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<MaintenanceRequestAttachment> MaintenanceRequestAttachments => Set<MaintenanceRequestAttachment>();
     public DbSet<AuthUserAccount> AuthUserAccounts => Set<AuthUserAccount>();
     public DbSet<TenantUnitAssignment> TenantUnitAssignments => Set<TenantUnitAssignment>();
+    public DbSet<TenantRegistrationRequest> TenantRegistrationRequests => Set<TenantRegistrationRequest>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -26,6 +27,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigureMaintenanceRequestAttachment(modelBuilder);
         ConfigureAuthUserAccount(modelBuilder);
         ConfigureTenantUnitAssignment(modelBuilder);
+        ConfigureTenantRegistrationRequest(modelBuilder);
     }
 
     private static void ConfigureUserProfile(ModelBuilder modelBuilder)
@@ -225,6 +227,51 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.HasOne(assignment => assignment.RentalUnit)
                 .WithMany(unit => unit.TenantAssignments)
                 .HasForeignKey(assignment => assignment.RentalUnitId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private static void ConfigureTenantRegistrationRequest(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<TenantRegistrationRequest>(entity =>
+        {
+            entity.ToTable("tenant_registration_requests");
+            entity.HasKey(request => request.Id);
+
+            entity.Property(request => request.FirstName).HasMaxLength(100).IsRequired();
+            entity.Property(request => request.LastName).HasMaxLength(100).IsRequired();
+            entity.Property(request => request.Email).HasMaxLength(256).IsRequired();
+            entity.Property(request => request.PhoneNumber).HasMaxLength(30);
+            entity.Property(request => request.RequestedPropertyOrUnit).HasMaxLength(250);
+            entity.Property(request => request.Note).HasMaxLength(1000);
+            entity.Property(request => request.Status)
+                .HasConversion<string>()
+                .HasMaxLength(50)
+                .IsRequired();
+            entity.Property(request => request.SubmittedAtUtc).IsRequired();
+            entity.Property(request => request.ReviewedAtUtc);
+            entity.Property(request => request.ReviewedByUserProfileId);
+            entity.Property(request => request.ReviewNote).HasMaxLength(1000);
+            entity.Property(request => request.ApprovedUserProfileId);
+            entity.Property(request => request.ApprovedRentalUnitId);
+
+            entity.HasIndex(request => request.Email);
+            entity.HasIndex(request => request.Status);
+            entity.HasIndex(request => new { request.Email, request.Status });
+
+            entity.HasOne(request => request.ReviewedByUserProfile)
+                .WithMany()
+                .HasForeignKey(request => request.ReviewedByUserProfileId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(request => request.ApprovedUserProfile)
+                .WithMany()
+                .HasForeignKey(request => request.ApprovedUserProfileId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(request => request.ApprovedRentalUnit)
+                .WithMany()
+                .HasForeignKey(request => request.ApprovedRentalUnitId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }

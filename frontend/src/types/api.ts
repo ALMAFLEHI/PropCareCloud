@@ -20,6 +20,12 @@ export type UserRole =
   | 'MaintenanceStaff'
   | number
 
+export type TenantRegistrationStatus =
+  | 'Pending'
+  | 'Approved'
+  | 'Rejected'
+  | number
+
 export type PropertyResponse = {
   id: string
   name: string
@@ -233,4 +239,45 @@ export type AvailableUnitResponse = {
   floor?: string | null
   bedrooms?: number | null
   status: ApiEnumValue
+}
+
+export type TenantRegistrationSubmitRequest = {
+  firstName: string
+  lastName: string
+  email: string
+  phoneNumber?: string | null
+  requestedPropertyOrUnit?: string | null
+  note?: string | null
+}
+
+export type TenantRegistrationApproveRequest = {
+  rentalUnitId: string
+  temporaryPassword: string
+  reviewNote?: string | null
+}
+
+export type TenantRegistrationRejectRequest = {
+  reviewNote?: string | null
+}
+
+export type TenantRegistrationResponse = {
+  id: string
+  firstName: string
+  lastName: string
+  fullName: string
+  email: string
+  phoneNumber?: string | null
+  requestedPropertyOrUnit?: string | null
+  note?: string | null
+  status: TenantRegistrationStatus
+  statusDisplayName: string
+  submittedAtUtc: string
+  reviewedAtUtc?: string | null
+  reviewedByUserProfileId?: string | null
+  reviewedByName?: string | null
+  reviewNote?: string | null
+  approvedUserProfileId?: string | null
+  approvedRentalUnitId?: string | null
+  approvedPropertyName?: string | null
+  approvedUnitNumber?: string | null
 }

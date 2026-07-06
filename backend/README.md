@@ -44,6 +44,12 @@ dotnet test .\backend\PropCareCloud.sln
 - `GET /api/database/status`
 - `GET /api/database/readiness`
 - `POST /api/seed/demo-data`
+- `POST /api/tenant-registrations`
+- `GET /api/tenant-registrations`
+- `GET /api/tenant-registrations/{id}`
+- `GET /api/tenant-registrations/available-units`
+- `POST /api/tenant-registrations/{id}/approve`
+- `POST /api/tenant-registrations/{id}/reject`
 
 ## Sprint 4 Database Domain Foundation
 
@@ -309,6 +315,30 @@ Sprint 12 adds safe Amazon RDS PostgreSQL migration and validation support.
 - Use `scripts/aws/check-rds-api-readiness.ps1` to validate the running API against RDS.
 - Use `scripts/aws/seed-rds-demo-data.ps1` to seed RDS demo data after migrations and API startup.
 - Manual AWS RDS creation and evidence screenshots are still pending.
+
+## Sprint 14 Tenant Registration and Approval
+
+Sprint 14 adds public tenant access requests and Admin / Owner or Property Manager approval.
+
+Tenant registration endpoints:
+
+- `POST /api/tenant-registrations` - public request submission.
+- `GET /api/tenant-registrations` - Admin / Owner and Property Manager list endpoint.
+- `GET /api/tenant-registrations/{id}` - Admin / Owner and Property Manager detail endpoint.
+- `GET /api/tenant-registrations/available-units` - Admin / Owner and Property Manager available-unit endpoint.
+- `POST /api/tenant-registrations/{id}/approve` - approve, create/activate tenant account, and assign a unit.
+- `POST /api/tenant-registrations/{id}/reject` - reject without creating an account or assignment.
+
+Rules:
+
+- Public submission creates only a pending request.
+- Duplicate pending requests for the same email are rejected.
+- Emails with active accounts are rejected during public submission.
+- Approval requires an available unit and temporary password.
+- Temporary passwords are stored as BCrypt hashes and are not returned by the API.
+- Tenant and Maintenance Staff accounts cannot list, approve, or reject registrations.
+- Migration added: `AddTenantRegistrationRequests`.
+- No real secrets, full connection strings, AWS keys, private keys, `.env` files, or production JWT secrets are committed.
 
 ## Notes
 

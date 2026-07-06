@@ -102,6 +102,12 @@ function LandingPage() {
             </Link>
           )}
           <Link
+            to="/register"
+            className="hidden rounded-md border border-cyan-200 bg-white/80 px-3 py-2 text-sm font-semibold text-cyan-800 shadow-sm transition hover:border-cyan-300 hover:bg-cyan-50 sm:inline-flex"
+          >
+            Request tenant access
+          </Link>
+          <Link
             to="/login"
             className="inline-flex items-center gap-2 rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white shadow-sm shadow-slate-900/20 transition hover:-translate-y-0.5 hover:bg-cyan-800"
           >
@@ -137,6 +143,12 @@ function LandingPage() {
             >
               See how it works
             </a>
+            <Link
+              to="/register"
+              className="inline-flex items-center justify-center rounded-md border border-cyan-200 bg-cyan-50 px-5 py-3 text-sm font-semibold text-cyan-800 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-white"
+            >
+              Request tenant access
+            </Link>
             {isAuthenticated && (
               <Link
                 to="/"

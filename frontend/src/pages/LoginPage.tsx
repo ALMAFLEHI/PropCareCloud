@@ -283,12 +283,15 @@ function LoginPage() {
             </p>
           </details>
 
-          <Link
-            to="/welcome"
-            className="mt-5 inline-flex text-sm font-semibold text-cyan-700 hover:text-cyan-800"
-          >
-            Back
-          </Link>
+          <div className="mt-5 flex flex-wrap items-center gap-3 text-sm font-semibold">
+            <Link to="/welcome" className="text-cyan-700 hover:text-cyan-800">
+              Back
+            </Link>
+            <span className="text-slate-300">/</span>
+            <Link to="/register" className="text-slate-600 hover:text-slate-900">
+              Request tenant access
+            </Link>
+          </div>
         </section>
       </div>
     </main>

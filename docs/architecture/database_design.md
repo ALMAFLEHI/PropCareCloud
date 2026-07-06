@@ -24,6 +24,8 @@ Sprint 4 defines the database/domain model foundation only. The backend does not
   - Stores request discussion and internal notes from users.
 - `maintenance_request_attachments`
   - Stores metadata for future uploaded evidence files. `StorageKey` represents a future Amazon S3 object key, not a local file path.
+- `tenant_registration_requests`
+  - Stores public tenant portal access requests before review. Requests start as Pending and can later be Approved or Rejected by an Admin / Owner or Property Manager.
 
 ## Main Relationships
 
@@ -35,6 +37,9 @@ Sprint 4 defines the database/domain model foundation only. The backend does not
 - `maintenance_request` 1 to many `maintenance_request_attachments`
 - `user_profile` 1 to many `maintenance_request_comments`
 - `user_profile` 1 to many uploaded `maintenance_request_attachments`
+- `user_profile` reviewer 1 to many reviewed `tenant_registration_requests`
+- `user_profile` approved tenant 1 to many approved `tenant_registration_requests`
+- `rental_unit` 1 to many approved `tenant_registration_requests`
 
 ## Text ERD
 
@@ -50,6 +55,12 @@ Property
         |-- MaintenanceRequests --> MaintenanceRequest
               |-- Comments --> MaintenanceRequestComment
               |-- Attachments --> MaintenanceRequestAttachment
+        |-- ApprovedTenantRegistrations --> TenantRegistrationRequest
+
+TenantRegistrationRequest
+  |-- ReviewedByUserProfile --> UserProfile
+  |-- ApprovedUserProfile --> UserProfile
+  |-- ApprovedRentalUnit --> RentalUnit
 ```
 
 ## Future Cloud Extension Notes
@@ -115,3 +126,23 @@ Maintenance request workflow:
 - Comments can be added and listed for each request.
 
 This CRUD API layer proves that the system is now using the EF Core database model for real backend workflows, while authentication, authorization enforcement, frontend CRUD screens, Amazon RDS, and cloud deployment remain planned for later sprints.
+
+## Sprint 14 Tenant Registration Requests
+
+Sprint 14 adds `tenant_registration_requests` to support public tenant onboarding before Task 1 final packaging.
+
+Registration request workflow:
+
+- A public visitor submits first name, last name, email, optional phone, optional requested property/unit text, and optional note.
+- The request is stored with `Pending` status.
+- Admin / Owner and Property Manager users can review pending, approved, and rejected requests.
+- Approval records reviewer details, approved tenant profile, approved rental unit, and review timestamp.
+- Rejection records reviewer details, review note, and review timestamp without creating an account or unit assignment.
+
+Approval uses the existing `auth_user_accounts`, `user_profiles`, `rental_units`, and `tenant_unit_assignments` tables. Temporary passwords are stored only as BCrypt hashes in `auth_user_accounts`.
+
+Migration:
+
+- `AddTenantRegistrationRequests`
+
+Task 2 cloud services such as API Gateway, Lambda, S3 maintenance attachments, SNS/SQS, CloudWatch, and X-Ray remain outside Sprint 14.

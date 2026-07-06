@@ -1,4 +1,10 @@
-import { Building2, LayoutDashboard, UsersRound, Wrench } from 'lucide-react'
+import {
+  Building2,
+  LayoutDashboard,
+  UserCheck,
+  UsersRound,
+  Wrench,
+} from 'lucide-react'
 import { NavLink } from 'react-router-dom'
 import type { LucideIcon } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -28,6 +34,12 @@ const navigationItems: NavigationItem[] = [
     label: 'Properties',
     to: '/properties',
     icon: Building2,
+    roles: ['AdminOwner', 'PropertyManager'],
+  },
+  {
+    label: 'Tenant Registrations',
+    to: '/tenant-registrations',
+    icon: UserCheck,
     roles: ['AdminOwner', 'PropertyManager'],
   },
   {

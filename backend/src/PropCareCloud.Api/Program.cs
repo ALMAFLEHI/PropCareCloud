@@ -118,6 +118,7 @@ if (isDatabaseConfigured)
     builder.Services.AddScoped<IMaintenanceRequestService, MaintenanceRequestService>();
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+    builder.Services.AddScoped<ITenantRegistrationService, TenantRegistrationService>();
 }
 builder.Services.AddCors(options =>
 {

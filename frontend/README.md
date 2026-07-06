@@ -53,11 +53,13 @@ The app reads `VITE_API_BASE_URL` and falls back to `http://localhost:5015`.
 
 - `/login` - Clean sign-in page with assessment credentials in a collapsible helper
 - `/welcome` - Public landing page for the property maintenance portal
+- `/register` - Public tenant portal access request page
 - `/` - Role-based dashboard with live property/request data
 - `/requests` - Role-specific maintenance request workflow
 - `/requests/:id` - Request detail page with status timeline and activity notes
 - `/properties` - Property list, selected property unit list, and create property form for Admin / Owner and Property Manager
 - `/users` - Admin-only users and roles page
+- `/tenant-registrations` - Admin / Owner and Property Manager registration review page
 
 ## Sprint 8 API Integration
 
@@ -213,6 +215,26 @@ Sprint 11.2 is frontend visual polish only.
 - Logout now returns to `/welcome` after the existing token/user clearing step.
 - No API calls, auth behavior, RBAC behavior, request workflow behavior, or backend functionality changed.
 - Evidence screenshots were captured under `docs/sprints/screenshots/`.
+
+## Sprint 14 Tenant Registration and Approval
+
+Sprint 14 adds the frontend for public tenant access requests and admin/manager approval.
+
+- `/register` lets a public visitor submit a tenant portal access request.
+- `/welcome` and `/login` include `Request tenant access` links.
+- `/tenant-registrations` lets Admin / Owner and Property Manager accounts review pending, approved, and rejected requests.
+- The review page supports approve and reject modals.
+- Approval requires selecting an available rental unit and entering a temporary password.
+- Tenant and Maintenance Staff users do not see the Tenant Registrations navigation item.
+
+Sprint 14 API calls added to the frontend:
+
+- `POST /api/tenant-registrations`
+- `GET /api/tenant-registrations`
+- `GET /api/tenant-registrations/{id}`
+- `GET /api/tenant-registrations/available-units`
+- `POST /api/tenant-registrations/{id}/approve`
+- `POST /api/tenant-registrations/{id}/reject`
 
 ## Validation
 

@@ -30,16 +30,41 @@ This keeps the user interface, business logic, and data persistence responsibili
 
 ## Planned AWS Services
 
-- Amazon RDS for PostgreSQL
-- Amazon S3 for document or image storage
-- Amazon API Gateway for cloud API exposure
-- AWS Lambda for selected serverless workflows
-- Amazon SNS or SQS for notifications and maintenance workflow messaging
-- Amazon CloudWatch and AWS X-Ray for monitoring, logs, and tracing
+- Task 1 current system:
+  - Amazon RDS for PostgreSQL
+  - AWS Elastic Beanstalk for the ASP.NET Core backend
+  - Amazon S3 static website hosting for the React frontend
+- Task 2 later enhancements:
+  - Amazon S3 for maintenance document or image storage
+  - Amazon API Gateway for cloud API exposure
+  - AWS Lambda for selected serverless workflows
+  - Amazon SNS or SQS for notifications and maintenance workflow messaging
+  - Amazon CloudWatch and AWS X-Ray for monitoring, logs, and tracing
 
 ## Sprint Workflow Summary
 
 The project will be developed iteratively. Sprint 1 prepares the workspace, folder structure, documentation, and environment checks. Later sprints will introduce the React frontend, ASP.NET Core Web API, database design, cloud integration, security, deployment, and monitoring.
+
+## Assignment Task Plan
+
+Task 1 covers the core PropCare Cloud system:
+
+- Core React frontend and ASP.NET Core backend system
+- Amazon RDS PostgreSQL cloud database
+- Elastic Beanstalk backend deployment
+- S3 static website frontend deployment
+- Tenant Registration & Approval Workflow
+- Task 1 final PowerPoint/PDF and ZIP package
+
+Task 2 is a later cloud-services extension:
+
+- Sprint 16: Task 2 Architecture Design
+- Sprint 17: API Gateway + Lambda + S3 Integration
+- Sprint 18: SNS/SQS Notification
+- Sprint 19: CloudWatch + X-Ray Monitoring
+- Sprint 20: Task 2 DOCX Report
+
+Sprint 14 does not add API Gateway, Lambda, S3 maintenance attachments, SNS, SQS, CloudWatch, or X-Ray. Those services remain part of Task 2.
 
 ## Sprint 2 Backend Foundation
 
@@ -368,4 +393,29 @@ powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-sprint13-deployment
 powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-sprint13-demo-data.ps1
 ```
 
-Next sprint: Sprint 14 - S3 Maintenance Attachments.
+## Sprint 14 Tenant Registration & Approval Workflow
+
+- Sprint 14 is code complete for local validation.
+- Public tenant registration route added at `/register`.
+- Welcome and login pages now link to the tenant access request flow.
+- Public API endpoint added: `POST /api/tenant-registrations`.
+- Admin / Owner and Property Manager review APIs added for listing, approving, rejecting, and loading available units.
+- Protected frontend route added at `/tenant-registrations` for Admin / Owner and Property Manager.
+- Approval creates or activates a tenant portal account, hashes the temporary password with BCrypt, and assigns the tenant to an available rental unit.
+- Rejection marks the request rejected and does not create an account or tenant-unit assignment.
+- Existing demo accounts, JWT authentication, RBAC rules, tenant isolation, RDS support, and Sprint 13 deployment package scripts are preserved.
+- Sprint 14 migration: `AddTenantRegistrationRequests`.
+- No AWS resources were created, updated, or deployed automatically.
+- No API Gateway, Lambda, S3 maintenance attachments, SNS/SQS, CloudWatch, or X-Ray work was added in Sprint 14.
+
+Validation commands:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-database-migration.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-seed-data.ps1
+```
+
+Next sprint: Sprint 15 - Task 1 Final Package.

@@ -77,6 +77,10 @@ export function canManageUsers(user: AuthUserResponse | null): boolean {
   return isAdminOwner(user)
 }
 
+export function canManageTenantRegistrations(user: AuthUserResponse | null): boolean {
+  return isAdminOrManager(user)
+}
+
 export function canAssignRequests(user: AuthUserResponse | null): boolean {
   return isAdminOrManager(user)
 }

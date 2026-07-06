@@ -13,6 +13,24 @@ User browser
   -> Amazon RDS PostgreSQL
 ```
 
+## Task 1 And Task 2 Boundary
+
+Task 1 uses the server-based deployment architecture above:
+
+- S3 static website hosting for the React/Vite frontend.
+- Elastic Beanstalk for the ASP.NET Core Web API.
+- Amazon RDS PostgreSQL for data persistence.
+- Sprint 14 Tenant Registration & Approval Workflow remains part of this same architecture.
+
+Task 2 later introduces the additional cloud-service integrations:
+
+- API Gateway and Lambda integration.
+- S3 maintenance attachment storage.
+- SNS/SQS notification workflow.
+- CloudWatch and X-Ray monitoring.
+
+Those Task 2 services are not part of Sprint 14.
+
 ## Backend Deployment
 
 The selected backend deployment target is AWS Elastic Beanstalk.

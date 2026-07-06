@@ -21,6 +21,11 @@ import type {
   RentalUnitResponse,
   ResetUserPasswordRequest,
   SystemInfoResponse,
+  TenantRegistrationApproveRequest,
+  TenantRegistrationRejectRequest,
+  TenantRegistrationResponse,
+  TenantRegistrationStatus,
+  TenantRegistrationSubmitRequest,
   TenantUnitAssignmentResponse,
   UpdateAccountStatusRequest,
   UpdateUserProfileRequest,
@@ -301,6 +306,70 @@ export async function endTenantUnitAssignment(
 export async function getAvailableUnits(): Promise<AvailableUnitResponse[]> {
   const response = await propCareApi.get<AvailableUnitResponse[]>(
     '/api/admin/users/available-units',
+  )
+  return response.data
+}
+
+export async function submitTenantRegistration(
+  payload: TenantRegistrationSubmitRequest,
+): Promise<TenantRegistrationResponse> {
+  const response = await propCareApi.post<TenantRegistrationResponse>(
+    '/api/tenant-registrations',
+    payload,
+  )
+  return response.data
+}
+
+export async function getTenantRegistrations(
+  status?: TenantRegistrationStatus | 'All',
+): Promise<TenantRegistrationResponse[]> {
+  const response = await propCareApi.get<TenantRegistrationResponse[]>(
+    '/api/tenant-registrations',
+    {
+      params: {
+        status: status && status !== 'All' ? status : undefined,
+      },
+    },
+  )
+  return response.data
+}
+
+export async function getTenantRegistrationById(
+  id: string,
+): Promise<TenantRegistrationResponse> {
+  const response = await propCareApi.get<TenantRegistrationResponse>(
+    `/api/tenant-registrations/${id}`,
+  )
+  return response.data
+}
+
+export async function approveTenantRegistration(
+  id: string,
+  payload: TenantRegistrationApproveRequest,
+): Promise<TenantRegistrationResponse> {
+  const response = await propCareApi.post<TenantRegistrationResponse>(
+    `/api/tenant-registrations/${id}/approve`,
+    payload,
+  )
+  return response.data
+}
+
+export async function rejectTenantRegistration(
+  id: string,
+  payload: TenantRegistrationRejectRequest,
+): Promise<TenantRegistrationResponse> {
+  const response = await propCareApi.post<TenantRegistrationResponse>(
+    `/api/tenant-registrations/${id}/reject`,
+    payload,
+  )
+  return response.data
+}
+
+export async function getTenantRegistrationAvailableUnits(): Promise<
+  AvailableUnitResponse[]
+> {
+  const response = await propCareApi.get<AvailableUnitResponse[]>(
+    '/api/tenant-registrations/available-units',
   )
   return response.data
 }
