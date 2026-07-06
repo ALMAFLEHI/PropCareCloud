@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using PropCareCloud.Api.Data;
+using PropCareCloud.Api.Domain.Enums;
 using PropCareCloud.Api.Services;
 
 namespace PropCareCloud.Api.Tests;
@@ -22,16 +23,16 @@ public sealed class SeedDataServiceTests
         Assert.False(result.SkippedBecauseAlreadySeeded);
         Assert.Equal(5, result.UsersCreated);
         Assert.Equal(2, result.PropertiesCreated);
-        Assert.Equal(4, result.UnitsCreated);
+        Assert.Equal(6, result.UnitsCreated);
         Assert.Equal(4, result.TenantAssignmentsCreated);
         Assert.Equal(4, result.RequestsCreated);
         Assert.Equal(4, result.CommentsCreated);
         Assert.Equal(1, result.AttachmentsCreated);
-        Assert.Equal(24, result.RecordsCreated);
+        Assert.Equal(26, result.RecordsCreated);
         Assert.Equal(5, result.RecordsRepaired);
         Assert.Equal(5, result.UsersTotal);
         Assert.Equal(2, result.PropertiesTotal);
-        Assert.Equal(4, result.UnitsTotal);
+        Assert.Equal(6, result.UnitsTotal);
         Assert.Equal(4, result.TenantAssignmentsTotal);
         Assert.Equal(4, result.RequestsTotal);
         Assert.Equal(4, result.CommentsTotal);
@@ -64,13 +65,38 @@ public sealed class SeedDataServiceTests
         Assert.False(result.SkippedBecauseAlreadySeeded);
         Assert.Equal(0, result.UsersCreated);
         Assert.Equal(2, result.PropertiesCreated);
-        Assert.Equal(4, result.UnitsCreated);
+        Assert.Equal(6, result.UnitsCreated);
         Assert.Equal(4, result.TenantAssignmentsCreated);
         Assert.Equal(4, result.RequestsCreated);
         Assert.Equal(4, result.CommentsCreated);
         Assert.Equal(1, result.AttachmentsCreated);
 
         await AssertCompleteSeedDatasetAsync(dbContext);
+    }
+
+    [Fact]
+    public async Task SeedDemoDataAsync_CreatesAvailableUnitsForTenantRegistrationApproval()
+    {
+        var options = CreateOptions("propcare-seed-available-units");
+
+        await using var dbContext = new AppDbContext(options);
+        var service = CreateSeedDataService(dbContext);
+
+        await service.SeedDemoDataAsync();
+        await service.SeedDemoDataAsync();
+
+        var availableUnits = await dbContext.RentalUnits
+            .Where(unit => unit.Status == UnitStatus.Available)
+            .Where(unit => !unit.TenantAssignments.Any(assignment =>
+                assignment.IsActive &&
+                assignment.LeaseEndDateUtc == null))
+            .Select(unit => unit.UnitNumber)
+            .OrderBy(unitNumber => unitNumber)
+            .ToArrayAsync();
+
+        Assert.Equal(["A-0303", "B-1401"], availableUnits);
+        Assert.Equal(1, await dbContext.RentalUnits.CountAsync(unit => unit.UnitNumber == "A-0303"));
+        Assert.Equal(1, await dbContext.RentalUnits.CountAsync(unit => unit.UnitNumber == "B-1401"));
     }
 
     [Fact]
@@ -131,7 +157,7 @@ public sealed class SeedDataServiceTests
         Assert.Equal(5, await dbContext.AuthUserAccounts.CountAsync());
         Assert.Equal(5, await dbContext.UserProfiles.CountAsync());
         Assert.Equal(2, await dbContext.Properties.CountAsync());
-        Assert.Equal(4, await dbContext.RentalUnits.CountAsync());
+        Assert.Equal(6, await dbContext.RentalUnits.CountAsync());
         Assert.Equal(4, await dbContext.TenantUnitAssignments
             .CountAsync(assignment => assignment.IsActive && assignment.LeaseEndDateUtc == null));
         Assert.Equal(4, await dbContext.MaintenanceRequests.CountAsync());
@@ -148,7 +174,7 @@ public sealed class SeedDataServiceTests
             .Select(unit => unit.UnitNumber)
             .OrderBy(unitNumber => unitNumber)
             .ToArrayAsync();
-        Assert.Equal(["A-0101", "A-0205", "B-1102", "B-1208"], unitNumbers);
+        Assert.Equal(["A-0101", "A-0205", "A-0303", "B-1102", "B-1208", "B-1401"], unitNumbers);
 
         var saraTenantId = await dbContext.AuthUserAccounts
             .Where(account => account.Email == "tenant@propcare.demo")

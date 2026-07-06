@@ -82,6 +82,12 @@ public sealed class SeedDataService(
             Bedrooms: 3,
             Status: UnitStatus.Occupied),
         new(
+            PropertyName: "Cloud Residence",
+            UnitNumber: "A-0303",
+            Floor: "3",
+            Bedrooms: 1,
+            Status: UnitStatus.Available),
+        new(
             PropertyName: "Harbor Heights",
             UnitNumber: "B-1102",
             Floor: "11",
@@ -92,7 +98,13 @@ public sealed class SeedDataService(
             UnitNumber: "B-1208",
             Floor: "12",
             Bedrooms: 2,
-            Status: UnitStatus.UnderMaintenance)
+            Status: UnitStatus.UnderMaintenance),
+        new(
+            PropertyName: "Harbor Heights",
+            UnitNumber: "B-1401",
+            Floor: "14",
+            Bedrooms: 2,
+            Status: UnitStatus.Available)
     ];
 
     private static readonly DemoTenantAssignmentDefinition[] DemoTenantAssignments =

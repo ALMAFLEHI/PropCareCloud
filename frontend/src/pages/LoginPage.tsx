@@ -7,6 +7,7 @@ import {
   Loader2,
   LockKeyhole,
   ShieldCheck,
+  UserCheck,
   Wrench,
 } from 'lucide-react'
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
@@ -255,6 +256,28 @@ function LoginPage() {
             </button>
           </form>
 
+          <div className="mt-5 rounded-lg border border-cyan-100 bg-cyan-50/70 p-4 shadow-sm">
+            <div className="flex items-start gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-white text-cyan-700 shadow-sm">
+                <UserCheck className="size-5" aria-hidden="true" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-950">
+                  New tenant?
+                </p>
+                <p className="mt-1 text-sm leading-6 text-slate-600">
+                  Request portal access and wait for property manager approval.
+                </p>
+                <Link
+                  to="/register"
+                  className="mt-3 inline-flex items-center justify-center rounded-md border border-cyan-200 bg-white px-3 py-2 text-sm font-semibold text-cyan-800 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-cyan-50"
+                >
+                  Request tenant access
+                </Link>
+              </div>
+            </div>
+          </div>
+
           <details className="mt-6 rounded-lg border border-slate-200 bg-slate-50/80 p-4">
             <summary className="cursor-pointer text-sm font-semibold text-slate-700">
               Use provided assessment credentials
@@ -283,13 +306,9 @@ function LoginPage() {
             </p>
           </details>
 
-          <div className="mt-5 flex flex-wrap items-center gap-3 text-sm font-semibold">
+          <div className="mt-5 text-sm font-semibold">
             <Link to="/welcome" className="text-cyan-700 hover:text-cyan-800">
               Back
-            </Link>
-            <span className="text-slate-300">/</span>
-            <Link to="/register" className="text-slate-600 hover:text-slate-900">
-              Request tenant access
             </Link>
           </div>
         </section>

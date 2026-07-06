@@ -396,6 +396,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-sprint13-demo-data.
 ## Sprint 14 Tenant Registration & Approval Workflow
 
 - Sprint 14 is code complete for local validation.
+- Sprint 14 readiness fix is code complete and ready for live redeployment.
 - Public tenant registration route added at `/register`.
 - Welcome and login pages now link to the tenant access request flow.
 - Public API endpoint added: `POST /api/tenant-registrations`.
@@ -404,6 +405,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-sprint13-demo-data.
 - Approval creates or activates a tenant portal account, hashes the temporary password with BCrypt, and assigns the tenant to an available rental unit.
 - Rejection marks the request rejected and does not create an account or tenant-unit assignment.
 - Existing demo accounts, JWT authentication, RBAC rules, tenant isolation, RDS support, and Sprint 13 deployment package scripts are preserved.
+- Demo seed data now includes approval-ready available units: `Cloud Residence - Unit A-0303` and `Harbor Heights - Unit B-1401`.
+- The approval available-units endpoint now returns only unassigned units with `Available` status.
+- Login page tenant access CTA was moved into a modern `New tenant?` secondary CTA block.
+- Welcome page tenant access CTA was moved out of the crowded hero CTA row into a separate premium panel.
 - Sprint 14 migration: `AddTenantRegistrationRequests`.
 - No AWS resources were created, updated, or deployed automatically.
 - No API Gateway, Lambda, S3 maintenance attachments, SNS/SQS, CloudWatch, or X-Ray work was added in Sprint 14.

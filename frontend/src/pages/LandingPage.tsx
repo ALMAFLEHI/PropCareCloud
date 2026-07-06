@@ -143,12 +143,6 @@ function LandingPage() {
             >
               See how it works
             </a>
-            <Link
-              to="/register"
-              className="inline-flex items-center justify-center rounded-md border border-cyan-200 bg-cyan-50 px-5 py-3 text-sm font-semibold text-cyan-800 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-white"
-            >
-              Request tenant access
-            </Link>
             {isAuthenticated && (
               <Link
                 to="/"
@@ -157,6 +151,30 @@ function LandingPage() {
                 Go to dashboard
               </Link>
             )}
+          </div>
+
+          <div className="mt-5 max-w-2xl rounded-lg border border-cyan-100 bg-white/75 p-4 shadow-sm backdrop-blur">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 flex size-10 shrink-0 items-center justify-center rounded-md bg-cyan-50 text-cyan-700">
+                  <UserCheck className="size-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-slate-950">
+                    Need tenant access?
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    Submit a request and your property manager can approve your portal account.
+                  </p>
+                </div>
+              </div>
+              <Link
+                to="/register"
+                className="inline-flex shrink-0 items-center justify-center rounded-md border border-cyan-200 bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800 shadow-sm transition hover:-translate-y-0.5 hover:border-cyan-300 hover:bg-white"
+              >
+                Request tenant access
+              </Link>
+            </div>
           </div>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-3">

@@ -66,6 +66,23 @@ Sprint 14 does not add API Gateway, Lambda, S3 maintenance attachments, SNS, SQS
 - Added public registration form with required first name, last name, and email fields.
 - Added admin/manager review screen with summary cards, status filters, registration records, approve modal, reject modal, and available-unit selection.
 
+## Sprint 14 Readiness Fix
+
+Manual live evidence testing found that the approval modal had no available rental units because all original demo units had active tenant assignments.
+
+Fixes added:
+
+- Added idempotent approval-ready demo unit: `Cloud Residence - Unit A-0303`.
+- Added idempotent approval-ready demo unit: `Harbor Heights - Unit B-1401`.
+- Both new units use the existing `UnitStatus.Available` enum value.
+- Neither unit receives an active tenant assignment during seeding.
+- `POST /api/seed/demo-data` now creates or repairs these units and remains safe to rerun.
+- `GET /api/tenant-registrations/available-units` now returns only units with `Available` status and no active tenant assignment.
+- Approval now rejects rental units that are not `Available`.
+- Login page `Request tenant access` was moved into a modern `New tenant?` secondary CTA block.
+- Welcome page `Request tenant access` was moved out of the crowded main hero CTA row into a separate premium tenant access panel.
+- No Task 2 services were added. Sprint 14 remains Task 1 frontend/backend/RDS functionality.
+
 ## Database Migration
 
 Migration added:
@@ -108,6 +125,9 @@ Generated files:
 - Approval creates a tenant user profile and auth account.
 - Approval creates an active tenant-unit assignment.
 - Approval prevents assignment to an occupied or actively assigned unit.
+- Approval prevents assignment to a unit that is not `Available`.
+- Seed data creates approval-ready available units and reruns without duplicating them.
+- Available-units service returns seeded available units and excludes assigned or unavailable units.
 - Rejection marks the request rejected and does not create an account or assignment.
 - Controller authorization metadata uses public submit and protected review endpoints.
 
@@ -145,14 +165,17 @@ The package scripts create local deployment artifacts only. They do not upload o
 - `docs/sprints/screenshots/sprint_14_admin_pending_registration_review.png`
 - `docs/sprints/screenshots/sprint_14_manager_pending_registration_review.png`
 - `docs/sprints/screenshots/sprint_14_approve_registration_modal.png`
+- `docs/sprints/screenshots/sprint_14_available_units_for_approval.png`
 - `docs/sprints/screenshots/sprint_14_registration_approved_status.png`
 - `docs/sprints/screenshots/sprint_14_approved_tenant_login_dashboard.png`
 - `docs/sprints/screenshots/sprint_14_approved_tenant_assigned_unit.png`
 - `docs/sprints/screenshots/sprint_14_rejected_registration_status.png`
+- `docs/sprints/screenshots/sprint_14_login_request_access_cta_fixed.png`
+- `docs/sprints/screenshots/sprint_14_welcome_request_access_cta_fixed.png`
 
 ## Issues Found
 
-- No Sprint 14 screenshots were captured during this code commit.
+- No final Sprint 14 fix evidence screenshots were committed during this code commit.
 - AWS redeployment was intentionally not performed during this sprint code commit.
 
 ## Intentionally Not Done
@@ -167,6 +190,6 @@ The package scripts create local deployment artifacts only. They do not upload o
 
 ## Final Status
 
-CODE COMPLETE.
+CODE COMPLETE / READY FOR LIVE REDEPLOYMENT.
 
-Sprint 14 tenant registration and approval workflow is implemented locally. Manual deployment to AWS, live migration application, and Sprint 14 evidence screenshots are the next manual closure steps.
+Sprint 14 tenant registration and approval workflow is implemented locally. The available-unit seed repair and tenant access CTA polish are ready for live redeployment. Manual deployment to AWS, seed repair on RDS, live approval validation, and Sprint 14 evidence screenshots are the next manual closure steps.

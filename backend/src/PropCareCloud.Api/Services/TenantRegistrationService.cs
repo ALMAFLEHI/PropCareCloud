@@ -147,6 +147,11 @@ public sealed class TenantRegistrationService(
             throw new InvalidOperationException("Selected rental unit was not found.");
         }
 
+        if (rentalUnit.Status != UnitStatus.Available)
+        {
+            throw new InvalidOperationException("Selected rental unit is not available for tenant assignment.");
+        }
+
         var activeAssignmentExists = await dbContext.TenantUnitAssignments
             .AnyAsync(assignment =>
                 assignment.RentalUnitId == request.RentalUnitId &&
@@ -226,6 +231,7 @@ public sealed class TenantRegistrationService(
 
         return await dbContext.RentalUnits
             .AsNoTracking()
+            .Where(unit => unit.Status == UnitStatus.Available)
             .Where(unit => !unit.TenantAssignments.Any(assignment =>
                 assignment.IsActive &&
                 assignment.LeaseEndDateUtc == null))

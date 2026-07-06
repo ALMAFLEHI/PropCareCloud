@@ -162,6 +162,23 @@ public sealed class TenantRegistrationServiceTests
     }
 
     [Fact]
+    public async Task GetAvailableUnitsAsync_ReturnsOnlyAvailableUnassignedUnits()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedRegistrationGraphAsync(dbContext);
+        var service = CreateService(dbContext, seed.Admin.Id, UserRole.AdminOwner);
+
+        var availableUnits = await service.GetAvailableUnitsAsync();
+
+        var availableUnit = Assert.Single(availableUnits);
+        Assert.Equal(seed.AvailableUnit.Id, availableUnit.RentalUnitId);
+        Assert.Equal("A-0303", availableUnit.UnitNumber);
+        Assert.DoesNotContain(availableUnits, unit => unit.RentalUnitId == seed.OccupiedUnit.Id);
+        Assert.DoesNotContain(availableUnits, unit => unit.RentalUnitId == seed.UnderMaintenanceUnit.Id);
+    }
+
+    [Fact]
     public async Task ApproveAsync_ManagerCanApprovePendingRegistration()
     {
         var options = CreateOptions();
@@ -192,6 +209,22 @@ public sealed class TenantRegistrationServiceTests
             service.ApproveAsync(seed.PendingRegistration.Id, new TenantRegistrationApproveRequest
             {
                 RentalUnitId = seed.OccupiedUnit.Id,
+                TemporaryPassword = "TenantPass123!"
+            }));
+    }
+
+    [Fact]
+    public async Task ApproveAsync_PreventsAssigningUnavailableUnassignedUnit()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedRegistrationGraphAsync(dbContext);
+        var service = CreateService(dbContext, seed.Admin.Id, UserRole.AdminOwner);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.ApproveAsync(seed.PendingRegistration.Id, new TenantRegistrationApproveRequest
+            {
+                RentalUnitId = seed.UnderMaintenanceUnit.Id,
                 TemporaryPassword = "TenantPass123!"
             }));
     }
@@ -298,6 +331,16 @@ public sealed class TenantRegistrationServiceTests
             Status = UnitStatus.Occupied,
             CreatedAtUtc = timestampUtc
         };
+        var underMaintenanceUnit = new RentalUnit
+        {
+            PropertyId = property.Id,
+            Property = property,
+            UnitNumber = "A-0404",
+            Floor = "4",
+            Bedrooms = 1,
+            Status = UnitStatus.UnderMaintenance,
+            CreatedAtUtc = timestampUtc
+        };
         var admin = CreateUser("Amina Owner", "admin@example.com", UserRole.AdminOwner);
         var manager = CreateUser("Daniel Manager", "manager@example.com", UserRole.PropertyManager);
         var existingTenant = CreateUser("Existing Tenant", "existing.tenant@example.com", UserRole.Tenant);
@@ -324,7 +367,7 @@ public sealed class TenantRegistrationServiceTests
         };
 
         dbContext.Properties.Add(property);
-        dbContext.RentalUnits.AddRange(availableUnit, occupiedUnit);
+        dbContext.RentalUnits.AddRange(availableUnit, occupiedUnit, underMaintenanceUnit);
         dbContext.UserProfiles.AddRange(admin, manager, existingTenant);
         dbContext.AuthUserAccounts.AddRange(
             CreateAccount(admin),
@@ -340,6 +383,7 @@ public sealed class TenantRegistrationServiceTests
             ExistingTenant: existingTenant,
             AvailableUnit: availableUnit,
             OccupiedUnit: occupiedUnit,
+            UnderMaintenanceUnit: underMaintenanceUnit,
             PendingRegistration: pendingRegistration);
     }
 
@@ -383,6 +427,7 @@ public sealed class TenantRegistrationServiceTests
         UserProfile ExistingTenant,
         RentalUnit AvailableUnit,
         RentalUnit OccupiedUnit,
+        RentalUnit UnderMaintenanceUnit,
         TenantRegistrationRequest PendingRegistration);
 
     private sealed class FakeCurrentUserService(Guid? userProfileId, UserRole? role) : ICurrentUserService
