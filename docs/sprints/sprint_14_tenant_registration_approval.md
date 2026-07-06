@@ -159,25 +159,37 @@ powershell -ExecutionPolicy Bypass -File .\scripts\aws\build-sprint13-frontend-p
 
 The package scripts create local deployment artifacts only. They do not upload or deploy to AWS.
 
-## Evidence Screenshots Needed Later
+## Final Live Validation Summary
 
+- Sprint 14 backend was deployed to Elastic Beanstalk.
+- Sprint 14 frontend was deployed to S3 static website hosting.
+- Sprint 14 migration `AddTenantRegistrationRequests` was applied to Amazon RDS PostgreSQL.
+- Seed repair added approval-ready units: `Cloud Residence - Unit A-0303` and `Harbor Heights - Unit B-1401`.
+- Public `/register` page loaded successfully.
+- Tenant registration submission created a pending request successfully.
+- Admin / Owner and Property Manager tenant registration review access was validated.
+- Available units appeared in the approval modal.
+- Admin approval created an approved tenant account and assigned an available unit.
+- Approved tenant login worked successfully.
+- Rejection flow worked successfully.
+- Final login UX polish was deployed and validated: invalid credentials now show `Invalid email or password. Please check your credentials and try again.`
+- No Task 2 services were added.
+
+## Final Evidence Captured
+
+- `docs/sprints/screenshots/sprint_14_login_request_access_cta_fixed.png`
+- `docs/sprints/screenshots/sprint_14_welcome_request_access_cta_fixed.png`
 - `docs/sprints/screenshots/sprint_14_public_registration_page.png`
 - `docs/sprints/screenshots/sprint_14_registration_submitted_pending.png`
 - `docs/sprints/screenshots/sprint_14_admin_pending_registration_review.png`
-- `docs/sprints/screenshots/sprint_14_manager_pending_registration_review.png`
-- `docs/sprints/screenshots/sprint_14_approve_registration_modal.png`
 - `docs/sprints/screenshots/sprint_14_available_units_for_approval.png`
+- `docs/sprints/screenshots/sprint_14_approve_registration_modal.png`
 - `docs/sprints/screenshots/sprint_14_registration_approved_status.png`
 - `docs/sprints/screenshots/sprint_14_approved_tenant_login_dashboard.png`
 - `docs/sprints/screenshots/sprint_14_approved_tenant_assigned_unit.png`
 - `docs/sprints/screenshots/sprint_14_rejected_registration_status.png`
-- `docs/sprints/screenshots/sprint_14_login_request_access_cta_fixed.png`
-- `docs/sprints/screenshots/sprint_14_welcome_request_access_cta_fixed.png`
-
-## Issues Found
-
-- No final Sprint 14 fix evidence screenshots were committed during this code commit.
-- AWS redeployment was intentionally not performed during this sprint code commit.
+- `docs/sprints/screenshots/sprint_14_login_invalid_credentials_message.png`
+- `docs/sprints/screenshots/sprint_14_rds_migration_success.png`
 
 ## Intentionally Not Done
 
@@ -191,6 +203,6 @@ The package scripts create local deployment artifacts only. They do not upload o
 
 ## Final Status
 
-CODE COMPLETE / READY FOR LIVE REDEPLOYMENT.
+COMPLETE.
 
-Sprint 14 tenant registration and approval workflow is implemented locally. The available-unit seed repair and tenant access CTA polish are ready for live redeployment. Manual deployment to AWS, seed repair on RDS, live approval validation, and Sprint 14 evidence screenshots are the next manual closure steps.
+Sprint 14 tenant registration and approval workflow is fully closed. Manual AWS redeployment, RDS migration, seed repair validation, public registration submission, admin/manager approval review, available-unit assignment, approved tenant login, rejection flow, invalid-login UX polish, and final evidence screenshots are complete. No Task 2 services were added.

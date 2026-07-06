@@ -395,8 +395,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-sprint13-demo-data.
 
 ## Sprint 14 Tenant Registration & Approval Workflow
 
-- Sprint 14 is code complete for local validation.
-- Sprint 14 readiness fix is code complete and ready for live redeployment.
+- Sprint 14 is complete.
+- Sprint 14 backend was deployed to Elastic Beanstalk and frontend was deployed to S3 static website hosting for final live validation.
+- Sprint 14 migration `AddTenantRegistrationRequests` was applied to Amazon RDS PostgreSQL.
 - Public tenant registration route added at `/register`.
 - Welcome and login pages now link to the tenant access request flow.
 - Public API endpoint added: `POST /api/tenant-registrations`.
@@ -411,7 +412,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-sprint13-demo-data.
 - Welcome page tenant access CTA was moved out of the crowded hero CTA row into a separate premium panel.
 - Final login UX polish maps invalid credentials to a user-friendly message instead of a technical 401 error.
 - Sprint 14 migration: `AddTenantRegistrationRequests`.
-- No AWS resources were created, updated, or deployed automatically.
+- Final evidence screenshots were captured under `docs/sprints/screenshots/`.
+- No AWS resources were created, updated, or deployed automatically by repository scripts.
 - No API Gateway, Lambda, S3 maintenance attachments, SNS/SQS, CloudWatch, or X-Ray work was added in Sprint 14.
 
 Validation commands:
