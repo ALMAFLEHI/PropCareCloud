@@ -426,4 +426,3 @@ powershell -ExecutionPolicy Bypass -File .\scripts\check-database-migration.ps1
 powershell -ExecutionPolicy Bypass -File .\scripts\check-seed-data.ps1
 ```
 
-Next sprint: Sprint 15 - Task 1 Final Package.
