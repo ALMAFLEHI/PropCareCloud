@@ -1,0 +1,52 @@
+flowchart LR
+    title["Proposed Task 2 Architecture"]
+
+    browser["User Browser"]
+    frontend["Existing Task 1<br/>React Frontend on S3"]
+    backend["Existing Task 1<br/>Elastic Beanstalk ASP.NET Core API"]
+    rds[("Existing Task 1<br/>Amazon RDS PostgreSQL")]
+    auth["Existing Backend Authorization<br/>JWT + RBAC + Tenant Isolation"]
+
+    apiGateway["New Task 2<br/>Amazon API Gateway REST API"]
+    lambda["New Task 2<br/>AWS Lambda Presigned Upload Service"]
+    s3[("New Task 2<br/>Private S3 Attachment Bucket")]
+    sns["New Task 2<br/>Amazon SNS Topic"]
+    sqs["New Task 2<br/>Amazon SQS Queue"]
+    email["Email Notification"]
+
+    monitoring["Monitoring<br/>CloudWatch + X-Ray"]
+
+    legendExisting["Legend: Existing Task 1"]
+    legendNew["Legend: New Task 2"]
+    legendMonitoring["Legend: Monitoring"]
+
+    browser --> frontend
+    frontend --> backend
+    backend --> rds
+    backend --> auth
+    auth --> apiGateway
+    apiGateway --> lambda
+    lambda --> s3
+    frontend -. direct presigned upload .-> s3
+    s3 -->|"ObjectCreated event"| sns
+    sns --> email
+    sns --> sqs
+
+    backend -. metrics and logs .-> monitoring
+    apiGateway -. metrics and trace .-> monitoring
+    lambda -. logs and trace .-> monitoring
+    s3 -. event evidence .-> monitoring
+    sns -. delivery metrics .-> monitoring
+    sqs -. queue metrics .-> monitoring
+
+    classDef existing fill:#d8f3ee,stroke:#0f766e,color:#073b3a,stroke-width:2px;
+    classDef new fill:#ffedd5,stroke:#f97316,color:#7c2d12,stroke-width:2px;
+    classDef data fill:#dcfce7,stroke:#15803d,color:#14532d,stroke-width:2px;
+    classDef monitoring fill:#f3e8ff,stroke:#7e22ce,color:#581c87,stroke-width:2px;
+    classDef legend fill:#f8fafc,stroke:#64748b,color:#334155,stroke-dasharray:5 5;
+
+    class browser,frontend,backend,auth existing;
+    class rds,s3 data;
+    class apiGateway,lambda,sns,sqs,email new;
+    class monitoring monitoring;
+    class title,legendExisting,legendNew,legendMonitoring legend;

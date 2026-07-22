@@ -66,6 +66,16 @@ Task 2 is a later cloud-services extension:
 
 Sprint 14 does not add API Gateway, Lambda, S3 maintenance attachments, SNS, SQS, CloudWatch, or X-Ray. Those services remain part of Task 2.
 
+## Task 2 Development
+
+- Sprint 16: Architecture Design - complete
+- Sprint 17: API Gateway + Lambda + S3 Integration - next
+- Sprint 18: SNS + SQS Notification Pipeline
+- Sprint 19: CloudWatch + X-Ray Monitoring
+- Sprint 20: Task 2 Final DOCX Report
+
+Task 2 extends the completed Task 1 cloud application. Task 1 remains operational, Task 2 implementation occurs on the `task2` branch, and no Task 2 AWS resources were created during Sprint 16.
+
 ## Sprint 2 Backend Foundation
 
 - Backend solution: `backend/PropCareCloud.sln`

@@ -1,0 +1,29 @@
+flowchart TD
+    title["Task 1 Final Architecture"]
+
+    browser["User Browser"]
+    frontend["Amazon S3 Static Website<br/>React + Vite Frontend"]
+    api["AWS Elastic Beanstalk<br/>ASP.NET Core Web API"]
+    ef["Entity Framework Core"]
+    rds[("Amazon RDS PostgreSQL")]
+    auth["JWT Authentication<br/>Backend RBAC<br/>Tenant Isolation"]
+    secrets["Secrets outside source control<br/>Environment configuration"]
+
+    browser --> frontend
+    frontend --> api
+    api --> auth
+    api --> ef
+    ef --> rds
+    secrets -.-> api
+
+    legend1["Legend: Existing Task 1"]
+
+    classDef existing fill:#d8f3ee,stroke:#0f766e,color:#073b3a,stroke-width:2px;
+    classDef data fill:#dcfce7,stroke:#15803d,color:#14532d,stroke-width:2px;
+    classDef security fill:#e0f2fe,stroke:#0369a1,color:#0c4a6e,stroke-width:2px;
+    classDef legend fill:#f8fafc,stroke:#64748b,color:#334155,stroke-dasharray:5 5;
+
+    class browser,frontend,api,ef existing;
+    class rds data;
+    class auth,secrets security;
+    class title,legend1 legend;
