@@ -1,0 +1,8 @@
+{
+  "Region": "us-east-1",
+  "StackName": "propcarecloud-task2-sprint17",
+  "FrontendOrigins": [
+    "http://propcarecloud-frontend-20260706.s3-website-us-east-1.amazonaws.com",
+    "http://localhost:5173"
+  ]
+}

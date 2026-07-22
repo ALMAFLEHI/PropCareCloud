@@ -165,8 +165,12 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.Property(attachment => attachment.UploadedByUserProfileId).IsRequired();
             entity.Property(attachment => attachment.FileName).HasMaxLength(255).IsRequired();
             entity.Property(attachment => attachment.ContentType).HasMaxLength(100).IsRequired();
+            entity.Property(attachment => attachment.SizeBytes).IsRequired();
             entity.Property(attachment => attachment.StorageKey).HasMaxLength(500).IsRequired();
             entity.Property(attachment => attachment.UploadedAtUtc).IsRequired();
+
+            entity.HasIndex(attachment => attachment.MaintenanceRequestId);
+            entity.HasIndex(attachment => attachment.StorageKey).IsUnique();
 
             entity.HasOne(attachment => attachment.UploadedByUserProfile)
                 .WithMany(user => user.UploadedAttachments)

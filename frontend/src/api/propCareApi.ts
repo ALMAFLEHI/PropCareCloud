@@ -1,6 +1,10 @@
 import axios from 'axios'
 import type {
   AssignedUnitResponse,
+  AttachmentConfirmRequest,
+  AttachmentDownloadAuthorizationResponse,
+  AttachmentUploadAuthorizationResponse,
+  AttachmentUploadRequest,
   AuthUserResponse,
   AvailableUnitResponse,
   CreateInternalUserRequest,
@@ -11,6 +15,7 @@ import type {
   LoginRequest,
   LoginResponse,
   MaintenanceRequestAssignRequest,
+  MaintenanceAttachmentResponse,
   MaintenanceRequestCommentCreateRequest,
   MaintenanceRequestCommentResponse,
   MaintenanceRequestCreateRequest,
@@ -188,6 +193,68 @@ export async function addMaintenanceRequestComment(
   const response = await propCareApi.post<MaintenanceRequestCommentResponse>(
     `/api/maintenance-requests/${id}/comments`,
     payload,
+  )
+  return response.data
+}
+
+export async function getMaintenanceRequestAttachments(
+  requestId: string,
+): Promise<MaintenanceAttachmentResponse[]> {
+  const response = await propCareApi.get<MaintenanceAttachmentResponse[]>(
+    `/api/maintenance-requests/${requestId}/attachments`,
+  )
+  return response.data
+}
+
+export async function createAttachmentUploadAuthorization(
+  requestId: string,
+  payload: AttachmentUploadRequest,
+): Promise<AttachmentUploadAuthorizationResponse> {
+  const response = await propCareApi.post<AttachmentUploadAuthorizationResponse>(
+    `/api/maintenance-requests/${requestId}/attachments/upload-url`,
+    payload,
+  )
+  return response.data
+}
+
+export async function uploadAttachmentDirectlyToS3(
+  authorization: AttachmentUploadAuthorizationResponse,
+  file: File,
+  onProgress?: (progress: number) => void,
+): Promise<void> {
+  const formData = new FormData()
+  Object.entries(authorization.fields).forEach(([key, value]) => {
+    formData.append(key, value)
+  })
+  formData.append('file', file)
+
+  await axios.post(authorization.uploadUrl, formData, {
+    timeout: 60_000,
+    onUploadProgress: (event) => {
+      if (event.total && onProgress) {
+        onProgress(Math.min(100, Math.round((event.loaded * 100) / event.total)))
+      }
+    },
+  })
+}
+
+export async function confirmMaintenanceRequestAttachment(
+  requestId: string,
+  payload: AttachmentConfirmRequest,
+): Promise<MaintenanceAttachmentResponse> {
+  const response = await propCareApi.post<MaintenanceAttachmentResponse>(
+    `/api/maintenance-requests/${requestId}/attachments/confirm`,
+    payload,
+  )
+  return response.data
+}
+
+export async function createAttachmentDownloadAuthorization(
+  requestId: string,
+  attachmentId: string,
+): Promise<AttachmentDownloadAuthorizationResponse> {
+  const response = await propCareApi.post<AttachmentDownloadAuthorizationResponse>(
+    `/api/maintenance-requests/${requestId}/attachments/${attachmentId}/download-url`,
   )
   return response.data
 }

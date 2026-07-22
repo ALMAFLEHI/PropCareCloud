@@ -61,6 +61,10 @@ config.local
 logs/
 *.log
 
+# Python generated caches
+__pycache__/
+*.py[cod]
+
 # Database and local data secrets
 *.db
 *.sqlite

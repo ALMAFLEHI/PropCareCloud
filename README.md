@@ -60,7 +60,7 @@ Task 2 is a later cloud-services extension:
 
 - Sprint 16: Task 2 Architecture Design
 - Sprint 17: API Gateway + Lambda + S3 Integration
-- Sprint 18: SNS/SQS Notification
+- Sprint 18: SNS + SQS Notification Pipeline
 - Sprint 19: CloudWatch + X-Ray Monitoring
 - Sprint 20: Task 2 DOCX Report
 
@@ -69,12 +69,12 @@ Sprint 14 does not add API Gateway, Lambda, S3 maintenance attachments, SNS, SQS
 ## Task 2 Development
 
 - Sprint 16: Architecture Design - complete
-- Sprint 17: API Gateway + Lambda + S3 Integration - next
-- Sprint 18: SNS + SQS Notification Pipeline
+- Sprint 17: API Gateway + Lambda + S3 Integration - complete; live end-to-end verified
+- Sprint 18: SNS + SQS Notification Pipeline - next
 - Sprint 19: CloudWatch + X-Ray Monitoring
 - Sprint 20: Task 2 Final DOCX Report
 
-Task 2 extends the completed Task 1 cloud application. Task 1 remains operational, Task 2 implementation occurs on the `task2` branch, and no Task 2 AWS resources were created during Sprint 16.
+Task 2 extends the completed Task 1 cloud application on the `task2` branch. Sprint 17 is deployed and live end-to-end verified: the existing ASP.NET Core backend authorizes direct-to-private-S3 maintenance attachments through API Gateway and Python 3.12 Lambda, with verified metadata stored in RDS PostgreSQL. Task 1 remains operational, the backend remains the JWT, RBAC, and tenant-isolation boundary, and no AWS credential or service API key is exposed to the frontend.
 
 ## Sprint 2 Backend Foundation
 

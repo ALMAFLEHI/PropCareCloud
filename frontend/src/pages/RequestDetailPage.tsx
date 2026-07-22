@@ -1,18 +1,27 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import {
   ArrowLeft,
+  Download,
+  FileText,
   MessageSquare,
+  Paperclip,
   RefreshCcw,
   Send,
+  Upload,
   UserCheck,
 } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import {
   addMaintenanceRequestComment,
   assignMaintenanceRequest,
+  confirmMaintenanceRequestAttachment,
+  createAttachmentDownloadAuthorization,
+  createAttachmentUploadAuthorization,
   getMaintenanceRequestById,
+  getMaintenanceRequestAttachments,
   getMaintenanceRequestComments,
   getMaintenanceStaff,
+  uploadAttachmentDirectlyToS3,
   updateMaintenanceRequestStatus,
 } from '../api/propCareApi'
 import EmptyState from '../components/EmptyState'
@@ -23,6 +32,7 @@ import StatusTimeline from '../components/StatusTimeline'
 import { useAuth } from '../context/AuthContext'
 import type {
   ApiEnumValue,
+  MaintenanceAttachmentResponse,
   MaintenanceRequestCommentResponse,
   MaintenanceRequestResponse,
   UserProfileSummaryResponse,
@@ -57,6 +67,37 @@ const statusValueByName: Record<string, string> = {
   cancelled: '5',
 }
 
+const allowedAttachmentTypes = new Set([
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'application/pdf',
+])
+const maxAttachmentSizeBytes = 10 * 1024 * 1024
+
+function validateAttachment(file: File) {
+  if (file.size < 1) {
+    return 'The selected attachment is empty.'
+  }
+  if (file.size > maxAttachmentSizeBytes) {
+    return 'The attachment must be 10 MB or smaller.'
+  }
+  if (!allowedAttachmentTypes.has(file.type)) {
+    return 'Select a JPEG, PNG, WebP, or PDF file.'
+  }
+  return ''
+}
+
+function formatFileSize(sizeBytes: number) {
+  if (sizeBytes < 1024) {
+    return `${sizeBytes} B`
+  }
+  if (sizeBytes < 1024 * 1024) {
+    return `${(sizeBytes / 1024).toFixed(1)} KB`
+  }
+  return `${(sizeBytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
 function getStatusValue(status: ApiEnumValue) {
   if (typeof status === 'number') {
     return String(status)
@@ -75,6 +116,7 @@ function RequestDetailPage() {
   const { user } = useAuth()
   const [request, setRequest] = useState<MaintenanceRequestResponse | null>(null)
   const [comments, setComments] = useState<MaintenanceRequestCommentResponse[]>([])
+  const [attachments, setAttachments] = useState<MaintenanceAttachmentResponse[]>([])
   const [maintenanceStaff, setMaintenanceStaff] = useState<UserProfileSummaryResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
@@ -84,6 +126,11 @@ function RequestDetailPage() {
   const [isSavingNote, setIsSavingNote] = useState(false)
   const [isSavingStatus, setIsSavingStatus] = useState(false)
   const [isAssigning, setIsAssigning] = useState(false)
+  const [selectedAttachment, setSelectedAttachment] = useState<File | null>(null)
+  const [isUploadingAttachment, setIsUploadingAttachment] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [downloadingAttachmentId, setDownloadingAttachmentId] = useState('')
+  const attachmentInputRef = useRef<HTMLInputElement>(null)
   const canAssign = canAssignRequests(user)
   const canUpdateStatus = canUpdateRequestStatus(user)
   const canMarkInternal = isAdminOrManager(user)
@@ -100,14 +147,16 @@ function RequestDetailPage() {
     setError('')
 
     try {
-      const [requestData, commentData, staffData] = await Promise.all([
+      const [requestData, commentData, attachmentData, staffData] = await Promise.all([
         getMaintenanceRequestById(id),
         getMaintenanceRequestComments(id),
+        getMaintenanceRequestAttachments(id),
         canAssign ? getMaintenanceStaff() : Promise.resolve([]),
       ])
 
       setRequest(requestData)
       setComments(commentData)
+      setAttachments(attachmentData)
       setMaintenanceStaff(staffData)
     } catch {
       setError('Request details could not be loaded for this account.')
@@ -189,6 +238,104 @@ function RequestDetailPage() {
       setError('Activity note could not be saved for this request.')
     } finally {
       setIsSavingNote(false)
+    }
+  }
+
+  function handleAttachmentSelection(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0] ?? null
+    setError('')
+    setSuccessMessage('')
+
+    if (!file) {
+      setSelectedAttachment(null)
+      return
+    }
+
+    const validationError = validateAttachment(file)
+    if (validationError) {
+      setSelectedAttachment(null)
+      setError(validationError)
+      event.target.value = ''
+      return
+    }
+
+    setSelectedAttachment(file)
+  }
+
+  async function handleAttachmentUpload() {
+    if (!id || !selectedAttachment) {
+      return
+    }
+
+    const validationError = validateAttachment(selectedAttachment)
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
+    setIsUploadingAttachment(true)
+    setUploadProgress(0)
+    setError('')
+    setSuccessMessage('')
+
+    try {
+      const uploadRequest = {
+        fileName: selectedAttachment.name,
+        contentType: selectedAttachment.type,
+        sizeBytes: selectedAttachment.size,
+      }
+      const authorization = await createAttachmentUploadAuthorization(
+        id,
+        uploadRequest,
+      )
+      await uploadAttachmentDirectlyToS3(
+        authorization,
+        selectedAttachment,
+        setUploadProgress,
+      )
+      await confirmMaintenanceRequestAttachment(id, {
+        ...uploadRequest,
+        objectKey: authorization.objectKey,
+      })
+
+      setAttachments(await getMaintenanceRequestAttachments(id))
+      setSelectedAttachment(null)
+      setUploadProgress(100)
+      if (attachmentInputRef.current) {
+        attachmentInputRef.current.value = ''
+      }
+      setSuccessMessage('Attachment uploaded securely.')
+    } catch {
+      setError('Attachment upload failed. Please check the file and try again.')
+    } finally {
+      setIsUploadingAttachment(false)
+    }
+  }
+
+  async function handleAttachmentDownload(attachmentId: string) {
+    if (!id) {
+      return
+    }
+
+    setDownloadingAttachmentId(attachmentId)
+    setError('')
+    setSuccessMessage('')
+    try {
+      const authorization = await createAttachmentDownloadAuthorization(
+        id,
+        attachmentId,
+      )
+      const link = document.createElement('a')
+      link.href = authorization.downloadUrl
+      link.target = '_blank'
+      link.rel = 'noopener noreferrer'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+    } catch {
+      setError('The secure download link could not be created. Please try again.')
+    } finally {
+      setDownloadingAttachmentId('')
     }
   }
 
@@ -311,6 +458,111 @@ function RequestDetailPage() {
                 value={formatDateTime(request.completedAtUtc)}
               />
             </dl>
+          </article>
+
+          <article className="premium-card p-5">
+            <div className="flex items-center gap-2">
+              <Paperclip className="size-5 text-cyan-700" aria-hidden="true" />
+              <h3 className="text-lg font-semibold text-slate-950">
+                Attachments
+              </h3>
+            </div>
+
+            <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50/70 p-4">
+              <label className="block">
+                <span className="text-sm font-medium text-slate-700">
+                  Add an attachment
+                </span>
+                <input
+                  ref={attachmentInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,application/pdf"
+                  disabled={isUploadingAttachment}
+                  onChange={handleAttachmentSelection}
+                  className="mt-2 block w-full text-sm text-slate-600 file:mr-4 file:rounded-md file:border-0 file:bg-white file:px-3 file:py-2 file:text-sm file:font-semibold file:text-cyan-700 file:ring-1 file:ring-inset file:ring-slate-200 hover:file:bg-cyan-50 disabled:cursor-not-allowed"
+                />
+              </label>
+              <p className="mt-2 text-xs leading-5 text-slate-500">
+                JPEG, PNG, WebP, or PDF. Maximum file size 10 MB.
+              </p>
+
+              {selectedAttachment && (
+                <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <p className="min-w-0 truncate text-sm font-medium text-slate-700">
+                    {selectedAttachment.name} · {formatFileSize(selectedAttachment.size)}
+                  </p>
+                  <button
+                    type="button"
+                    disabled={isUploadingAttachment}
+                    onClick={() => {
+                      void handleAttachmentUpload()
+                    }}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+                  >
+                    <Upload className="size-4" aria-hidden="true" />
+                    {isUploadingAttachment ? 'Uploading...' : 'Upload securely'}
+                  </button>
+                </div>
+              )}
+
+              {isUploadingAttachment && (
+                <div className="mt-4" aria-live="polite">
+                  <div className="flex items-center justify-between text-xs font-medium text-slate-600">
+                    <span>Direct upload to secure storage</span>
+                    <span>{uploadProgress}%</span>
+                  </div>
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+                    <div
+                      className="h-full rounded-full bg-cyan-600 transition-[width]"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 divide-y divide-slate-200">
+              {attachments.length === 0 && (
+                <p className="text-sm text-slate-500">
+                  No secure attachments have been added yet.
+                </p>
+              )}
+              {attachments.map((attachment) => (
+                <div
+                  key={attachment.id}
+                  className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-cyan-50 text-cyan-700">
+                      <FileText className="size-5" aria-hidden="true" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-slate-950">
+                        {attachment.fileName}
+                      </p>
+                      <p className="mt-1 text-xs leading-5 text-slate-500">
+                        {formatFileSize(attachment.sizeBytes)} · Uploaded by{' '}
+                        {attachment.uploadedByName || 'Portal user'} ·{' '}
+                        {formatDateTime(attachment.uploadedAtUtc)}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={downloadingAttachmentId === attachment.id}
+                    onClick={() => {
+                      void handleAttachmentDownload(attachment.id)
+                    }}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-md border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
+                  >
+                    <Download className="size-4" aria-hidden="true" />
+                    {downloadingAttachmentId === attachment.id
+                      ? 'Preparing...'
+                      : 'Open'}
+                  </button>
+                </div>
+              ))}
+            </div>
           </article>
 
           <article className="premium-card p-5">

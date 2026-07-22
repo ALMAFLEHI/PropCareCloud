@@ -1,0 +1,331 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: PropCare Cloud Task 2 Sprint 17 private attachment service
+
+Parameters:
+  LambdaCodeBucket:
+    Type: String
+    Description: Private deployment-artifact bucket containing the Lambda ZIP.
+  LambdaCodeKey:
+    Type: String
+    Description: S3 object key for the Lambda ZIP.
+  FrontendOrigins:
+    Type: CommaDelimitedList
+    Default: http://propcarecloud-frontend-20260706.s3-website-us-east-1.amazonaws.com,http://localhost:5173
+
+Resources:
+  AttachmentBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub propcarecloud-task2-attachments-${AWS::AccountId}-${AWS::Region}
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: BucketOwnerEnforced
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - Content-Type
+              - x-amz-server-side-encryption
+            AllowedMethods:
+              - GET
+              - POST
+            AllowedOrigins: !Ref FrontendOrigins
+            ExposedHeaders:
+              - ETag
+            MaxAge: 300
+      LifecycleConfiguration:
+        Rules:
+          - Id: AbortIncompleteMultipartUploads
+            Status: Enabled
+            AbortIncompleteMultipartUpload:
+              DaysAfterInitiation: 1
+      Tags:
+        - Key: Project
+          Value: PropCareCloud
+        - Key: Task
+          Value: Task2
+        - Key: Sprint
+          Value: '17'
+        - Key: Environment
+          Value: Assignment
+
+  PresignFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: propcarecloud-task2-presign-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: propcarecloud-task2-private-attachment-access
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource: !Sub ${AttachmentBucket.Arn}/maintenance-requests/*
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !GetAtt AttachmentBucket.Arn
+                Condition:
+                  StringLike:
+                    s3:prefix: maintenance-requests/*
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/propcarecloud-task2-presign-service:*
+      Tags:
+        - Key: Project
+          Value: PropCareCloud
+        - Key: Task
+          Value: Task2
+        - Key: Sprint
+          Value: '17'
+        - Key: Environment
+          Value: Assignment
+
+  PresignFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: propcarecloud-task2-presign-service
+      Runtime: python3.12
+      Handler: app.lambda_handler
+      Role: !GetAtt PresignFunctionRole.Arn
+      Timeout: 10
+      MemorySize: 128
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Ref LambdaCodeKey
+      Environment:
+        Variables:
+          ATTACHMENT_BUCKET: !Ref AttachmentBucket
+          URL_EXPIRY_SECONDS: '300'
+          MAX_FILE_SIZE_BYTES: '10485760'
+          ALLOWED_CONTENT_TYPES: image/jpeg,image/png,image/webp,application/pdf
+      Tags:
+        - Key: Project
+          Value: PropCareCloud
+        - Key: Task
+          Value: Task2
+        - Key: Sprint
+          Value: '17'
+        - Key: Environment
+          Value: Assignment
+
+  PresignFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/propcarecloud-task2-presign-service
+      RetentionInDays: 14
+      Tags:
+        - Key: Project
+          Value: PropCareCloud
+        - Key: Task
+          Value: Task2
+        - Key: Sprint
+          Value: '17'
+        - Key: Environment
+          Value: Assignment
+
+  AttachmentApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: propcarecloud-task2-attachments-api
+      Description: Backend-only attachment authorization API for PropCare Cloud.
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      Tags:
+        - Key: Project
+          Value: PropCareCloud
+        - Key: Task
+          Value: Task2
+        - Key: Sprint
+          Value: '17'
+        - Key: Environment
+          Value: Assignment
+
+  AttachmentsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref AttachmentApi
+      ParentId: !GetAtt AttachmentApi.RootResourceId
+      PathPart: attachments
+
+  UploadUrlResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref AttachmentApi
+      ParentId: !Ref AttachmentsResource
+      PathPart: upload-url
+
+  VerifyResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref AttachmentApi
+      ParentId: !Ref AttachmentsResource
+      PathPart: verify
+
+  DownloadUrlResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref AttachmentApi
+      ParentId: !Ref AttachmentsResource
+      PathPart: download-url
+
+  UploadUrlMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref AttachmentApi
+      ResourceId: !Ref UploadUrlResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PresignFunction.Arn}/invocations
+
+  VerifyMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref AttachmentApi
+      ResourceId: !Ref VerifyResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PresignFunction.Arn}/invocations
+
+  DownloadUrlMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref AttachmentApi
+      ResourceId: !Ref DownloadUrlResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PresignFunction.Arn}/invocations
+
+  AttachmentApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - UploadUrlMethod
+      - VerifyMethod
+      - DownloadUrlMethod
+    Properties:
+      RestApiId: !Ref AttachmentApi
+      Description: !Sub Sprint 17 deployment ${LambdaCodeKey}
+
+  AttachmentApiStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      RestApiId: !Ref AttachmentApi
+      DeploymentId: !Ref AttachmentApiDeployment
+      StageName: prod
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 5
+      Tags:
+        - Key: Project
+          Value: PropCareCloud
+        - Key: Task
+          Value: Task2
+        - Key: Sprint
+          Value: '17'
+        - Key: Environment
+          Value: Assignment
+
+  AttachmentApiKeyV2:
+    Type: AWS::ApiGateway::ApiKey
+    DependsOn: AttachmentApiStage
+    Properties:
+      Name: propcarecloud-task2-backend-service-key-v2
+      Description: Backend-only key for the PropCare Cloud attachment service.
+      Enabled: true
+      Tags:
+        - Key: Project
+          Value: PropCareCloud
+        - Key: Task
+          Value: Task2
+        - Key: Sprint
+          Value: '17'
+        - Key: Environment
+          Value: Assignment
+
+  AttachmentUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn: AttachmentApiStage
+    Properties:
+      UsagePlanName: propcarecloud-task2-attachments-usage-plan
+      ApiStages:
+        - ApiId: !Ref AttachmentApi
+          Stage: prod
+      Throttle:
+        BurstLimit: 10
+        RateLimit: 5
+      Quota:
+        Limit: 1000
+        Period: DAY
+      Tags:
+        - Key: Project
+          Value: PropCareCloud
+        - Key: Task
+          Value: Task2
+        - Key: Sprint
+          Value: '17'
+        - Key: Environment
+          Value: Assignment
+
+  AttachmentUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref AttachmentApiKeyV2
+      KeyType: API_KEY
+      UsagePlanId: !Ref AttachmentUsagePlan
+
+  AttachmentApiLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref PresignFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${AttachmentApi}/*/POST/attachments/*
+
+Outputs:
+  ApiBaseUrl:
+    Description: Non-secret API base URL for Elastic Beanstalk configuration.
+    Value: !Sub https://${AttachmentApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/prod
+  ApiKeyId:
+    Description: Identifier used by the deployment script to retrieve the secret value securely.
+    Value: !Ref AttachmentApiKeyV2
+  AttachmentBucketName:
+    Description: Private Sprint 17 attachment bucket.
+    Value: !Ref AttachmentBucket
+  LambdaFunctionName:
+    Description: Sprint 17 presign Lambda function.
+    Value: !Ref PresignFunction

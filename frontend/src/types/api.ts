@@ -281,3 +281,36 @@ export type TenantRegistrationResponse = {
   approvedPropertyName?: string | null
   approvedUnitNumber?: string | null
 }
+
+export type AttachmentUploadRequest = {
+  fileName: string
+  contentType: string
+  sizeBytes: number
+}
+
+export type AttachmentUploadAuthorizationResponse = {
+  uploadUrl: string
+  fields: Record<string, string>
+  objectKey: string
+  expiresInSeconds: number
+}
+
+export type AttachmentConfirmRequest = AttachmentUploadRequest & {
+  objectKey: string
+}
+
+export type MaintenanceAttachmentResponse = {
+  id: string
+  maintenanceRequestId: string
+  fileName: string
+  contentType: string
+  sizeBytes: number
+  uploadedByUserProfileId: string
+  uploadedByName: string
+  uploadedAtUtc: string
+}
+
+export type AttachmentDownloadAuthorizationResponse = {
+  downloadUrl: string
+  expiresInSeconds: number
+}

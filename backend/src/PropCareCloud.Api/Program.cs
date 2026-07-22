@@ -2,6 +2,7 @@ using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using PropCareCloud.Api.Configuration;
 using PropCareCloud.Api.Data;
 using PropCareCloud.Api.Domain.Enums;
 using PropCareCloud.Api.Services;
@@ -109,6 +110,12 @@ builder.Services.AddAuthorization(options =>
 });
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.Configure<Task2AttachmentOptions>(
+    builder.Configuration.GetSection(Task2AttachmentOptions.SectionName));
+builder.Services.AddHttpClient<ITask2AttachmentGateway, Task2AttachmentGatewayClient>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 if (isDatabaseConfigured)
 {
     builder.Services.AddDbContext<AppDbContext>(options =>
@@ -116,6 +123,7 @@ if (isDatabaseConfigured)
     builder.Services.AddScoped<ISeedDataService, SeedDataService>();
     builder.Services.AddScoped<IPropertyService, PropertyService>();
     builder.Services.AddScoped<IMaintenanceRequestService, MaintenanceRequestService>();
+    builder.Services.AddScoped<IMaintenanceAttachmentService, MaintenanceAttachmentService>();
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<IUserManagementService, UserManagementService>();
     builder.Services.AddScoped<ITenantRegistrationService, TenantRegistrationService>();

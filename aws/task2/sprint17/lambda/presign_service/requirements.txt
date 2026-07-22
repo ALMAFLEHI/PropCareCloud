@@ -1,0 +1,1 @@
+# No packaged dependencies. AWS Lambda Python 3.12 provides boto3 and botocore.

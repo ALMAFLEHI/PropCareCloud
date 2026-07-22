@@ -16,7 +16,7 @@ Task 1 uses a three-tier cloud architecture:
 
 The browser loads the frontend from S3, the frontend calls the Elastic Beanstalk API, the API enforces authentication and business rules, and EF Core persists data to RDS PostgreSQL.
 
-## 3. Task 2 Proposed Architecture
+## 3. Task 2 Architecture
 
 Task 2 keeps the existing Task 1 core path active:
 
@@ -25,11 +25,16 @@ Task 2 keeps the existing Task 1 core path active:
 - Existing Task 1 component: Elastic Beanstalk ASP.NET Core API.
 - Existing Task 1 component: Amazon RDS PostgreSQL.
 
-Task 2 adds a serverless attachment microservice:
+Sprint 17 adds a serverless attachment microservice:
 
 - New Task 2 component: Amazon API Gateway REST API.
-- New Task 2 component: AWS Lambda presigned upload service.
+- New Task 2 component: Python 3.12 AWS Lambda authorization service.
 - New Task 2 component: Private Amazon S3 attachment bucket.
+- Existing backend-to-API Gateway calls protected by a backend-only API key and usage plan.
+- Presigned POST upload policies limited to approved content types, a 10 MB maximum, and five-minute expiry.
+
+Later Task 2 sprints propose:
+
 - New Task 2 component: Amazon SNS topic for attachment upload events.
 - New Task 2 component: Amazon SQS queue for durable event handling.
 - New Task 2 component: Amazon CloudWatch metrics and logs.
@@ -44,7 +49,7 @@ The existing backend remains the security boundary. It validates JWT identity, r
 | Application architecture | S3 frontend, Elastic Beanstalk API, RDS PostgreSQL | Adds API Gateway and Lambda for attachment URL generation | Keeps the core app stable while adding focused serverless capability |
 | File storage | Business data stored in RDS | Attachment objects stored in private S3 | Avoids storing large binary files in the relational database |
 | Processing model | Server-based ASP.NET Core request handling | Event-driven upload and notification path | Improves scalability for file upload workflows |
-| Communication | Frontend calls backend API | Backend calls API Gateway; S3 events publish to SNS and SQS | Decouples upload authorization from notification processing |
+| Communication | Frontend calls backend API | Backend calls API Gateway; browser uploads directly to private S3 | Keeps user authorization in the backend and removes file transfer load from Elastic Beanstalk |
 | Reliability | Elastic Beanstalk and RDS support the main workflow | SQS retains events if notification processing is delayed | Attachment events do not block the core maintenance workflow |
 | Monitoring | Application logs and deployment health | CloudWatch metrics plus X-Ray traces for serverless flow | Improves visibility across the added AWS services |
 | Security | JWT, RBAC, tenant isolation, RDS security groups | Private S3, short-lived presigned URLs, least-privilege Lambda IAM | Adds file upload capability without exposing AWS credentials |
@@ -56,12 +61,15 @@ The existing backend remains the security boundary. It validates JWT identity, r
 3. Backend validates JWT, role, request access, and tenant isolation.
 4. Backend calls API Gateway.
 5. API Gateway invokes Lambda.
-6. Lambda generates a short-lived presigned S3 upload URL.
-7. Frontend uploads directly to private S3.
-8. Backend stores attachment metadata in RDS.
-9. S3 publishes ObjectCreated event to SNS.
-10. SNS sends notification and forwards the event to SQS.
-11. CloudWatch and X-Ray collect monitoring information.
+6. Lambda returns a five-minute presigned POST with an exact object key, content type, encryption field, and size policy.
+7. Frontend uploads directly to private S3 without AWS credentials.
+8. Frontend asks the backend to confirm the upload.
+9. Backend authorizes the request again and asks Lambda to verify the S3 object metadata.
+10. Backend stores only file metadata and the private object key in RDS PostgreSQL.
+11. Authorized users list metadata through the backend.
+12. Backend requests a five-minute presigned GET from Lambda for authorized downloads.
+
+Sprint 18 may add the previously designed SNS and SQS notification path without changing this Sprint 17 upload flow.
 
 ## 6. Security Design
 
@@ -69,15 +77,20 @@ The existing backend remains the security boundary. It validates JWT identity, r
 - The frontend must never contain AWS credentials.
 - S3 attachment bucket remains private.
 - S3 Block Public Access remains enabled.
-- Presigned URLs are short-lived.
+- Upload and download authorizations expire after five minutes.
 - File type and size are validated before upload authorization.
 - Lambda IAM role uses least privilege for presigned URL generation.
-- API Gateway is not treated as the main user authentication system.
-- API Gateway access credential or API key, if used, is stored only in Elastic Beanstalk environment configuration.
+- Lambda object access is restricted to the attachment prefix; `s3:ListBucket` is additionally constrained to `maintenance-requests/*` so missing objects can be reported safely.
+- API Gateway requires a backend-only API key, usage plan, and throttling on all three routes.
+- API Gateway is service-level protection; JWT identity and role authorization remain in ASP.NET Core.
+- The API key is generated by API Gateway and stored only in Elastic Beanstalk environment configuration.
 - Secrets are never committed.
 - RDS is not accessed directly by Lambda.
 - Existing tenant isolation remains enforced before generating an upload URL.
-- S3 object keys should use maintenance request ID and a generated unique filename.
+- S3 object keys use the maintenance request ID, a generated UUID, and a sanitized file name.
+- S3 Block Public Access, bucket-owner enforcement, and SSE-S3 encryption are enabled.
+- S3 CORS permits only the deployed frontend and local development origins.
+- Attachment bytes never pass through Elastic Beanstalk or RDS.
 - No sensitive values should appear in architecture files, screenshots, or repository documentation.
 
 ## 7. Reliability and Availability
@@ -85,9 +98,7 @@ The existing backend remains the security boundary. It validates JWT identity, r
 - Existing Task 1 application remains independent if the attachment service fails.
 - Direct browser-to-S3 upload reduces load on Elastic Beanstalk.
 - Lambda provides automatic scaling for the presigned URL service.
-- SNS supports fan-out to multiple subscribers.
-- SQS provides durable message retention and decouples event handling.
-- Failed notification processing does not break the core maintenance request workflow.
+- SNS and SQS reliability controls remain planned for Sprint 18.
 - Existing RDS data remains the source of truth for business metadata.
 
 ## 8. Cost-Conscious Design
@@ -143,16 +154,28 @@ X-Ray:
 - Service map.
 - Latency and failure analysis.
 
-## 10. Task 1 Protection
+## 10. Sprint 17 Live Deployment
+
+- CloudFormation stack `propcarecloud-task2-sprint17` is `UPDATE_COMPLETE` in `us-east-1`.
+- The deployed service contains the REST API `prod` stage, Python 3.12 Lambda, private encrypted attachment bucket, scoped IAM role, API key, usage plan, and Lambda log group.
+- The existing Elastic Beanstalk environment runs Sprint 17 backend version `propcarecloud-api-sprint17-20260722-211908` and remains Green/Ready.
+- RDS snapshot `propcarecloud-pre-task2-sprint17-20260722-201649` is available.
+- Additive migration `AddTask2AttachmentMetadata` is applied; readiness reports `canConnect: true`, zero pending migrations, and six applied migrations.
+- The existing frontend S3 website was backed up and updated without deleting unrelated objects or changing website settings.
+- Live authorization, private upload, object verification, metadata persistence/listing, secure download, duplicate rejection, and unsigned-access denial passed.
+- SNS, SQS, a custom CloudWatch dashboard, and X-Ray configuration were not added in Sprint 17.
+
+## 11. Task 1 Protection
 
 - Task 1 deployment remains operational.
-- Existing S3 frontend remains unchanged.
-- Existing Elastic Beanstalk backend remains unchanged during Sprint 16.
-- Existing RDS data and migrations remain unchanged.
+- Existing S3 frontend bucket, Elastic Beanstalk application/environment, and RDS instance were preserved.
+- Sprint 17 updated the existing backend/frontend deployments and added one reviewed EF Core migration; it did not replace Task 1 resources or reset data.
+- Live regression checks passed for public pages, Admin / Owner, Property Manager, Tenant, and Maintenance Staff scopes.
+- Existing users, properties, maintenance requests, and tenant assignments remained present after migration and deployment.
 - Task 2 components are additive.
 - All future code changes must pass Task 1 regression validation.
 
-## 11. Sprint Mapping
+## 12. Sprint Mapping
 
 | Sprint | Scope |
 | --- | --- |
