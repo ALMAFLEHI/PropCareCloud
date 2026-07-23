@@ -191,3 +191,13 @@ No screenshot placeholders are committed.
 - Native API Gateway/Lambda X-Ray tracing is used; explicit SNS subsegments depend on AWS native service instrumentation.
 - CloudWatch metrics can take several minutes to populate after controlled traffic.
 - Manual evidence screenshots remain a user capture step so AWS account details and trace identifiers can be reviewed and masked before commit.
+
+## Final Evidence
+
+- `screenshots/sprint_19_cloudwatch_dashboard.png`
+- `screenshots/sprint_19_cloudwatch_alarms.png`
+- `screenshots/sprint_19_xray_service_map.png`
+- `screenshots/sprint_19_xray_trace_detail.png`
+- `screenshots/sprint_19_notification_inbox.png`
+
+Evidence status: CAPTURED AND VERIFIED
