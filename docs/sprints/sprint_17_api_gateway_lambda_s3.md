@@ -189,3 +189,13 @@ COMPLETE - LIVE END-TO-END VERIFIED
 - Upload authorization, direct private upload, verification, metadata persistence/listing, secure download, and required negative tests passed live.
 - Task 1 remained operational and passed public-page, four-role, data-preservation, RBAC, and tenant-isolation regression checks.
 - Five high-value screenshots listed above remain for manual evidence capture without secrets or complete presigned URLs.
+
+## Final Evidence
+
+- `screenshots/sprint_17_stack_resources.png`
+- `screenshots/sprint_17_api_gateway_lambda_success.png`
+- `screenshots/sprint_17_private_s3_object.png`
+- `screenshots/sprint_17_live_attachment_upload.png`
+- `screenshots/sprint_17_attachment_download.png`
+
+Evidence status: CAPTURED AND VERIFIED
