@@ -35,27 +35,59 @@ ALLOWED_EXTENSIONS = {
 s3_client = boto3.client("s3")
 
 
-def lambda_handler(event, _context):
+def lambda_handler(event, context):
+    method = str(event.get("httpMethod", "")).upper()
+    path = str(event.get("resource") or event.get("path") or "").rstrip("/")
     try:
-        method = str(event.get("httpMethod", "")).upper()
-        path = str(event.get("resource") or event.get("path") or "").rstrip("/")
         if method != "POST":
-            return response(405, {"message": "Method not allowed."})
+            result = response(405, {"message": "Method not allowed."})
+            _log_invocation(context, method, path, result["statusCode"])
+            return result
 
         body = parse_body(event)
         if path.endswith("/attachments/upload-url"):
-            return create_upload_authorization(body)
-        if path.endswith("/attachments/verify"):
-            return verify_uploaded_object(body)
-        if path.endswith("/attachments/download-url"):
-            return create_download_authorization(body)
-
-        return response(404, {"message": "Attachment service route not found."})
+            result = create_upload_authorization(body)
+        elif path.endswith("/attachments/verify"):
+            result = verify_uploaded_object(body)
+        elif path.endswith("/attachments/download-url"):
+            result = create_download_authorization(body)
+        else:
+            result = response(404, {"message": "Attachment service route not found."})
+        _log_invocation(context, method, path, result["statusCode"])
+        return result
     except ValueError as error:
-        return response(400, {"message": str(error)})
+        result = response(400, {"message": str(error)})
+        _log_invocation(context, method, path, result["statusCode"])
+        return result
     except Exception as error:  # Lambda boundary: never return stack traces.
         LOGGER.error("Unhandled attachment service error: %s", type(error).__name__)
-        return response(500, {"message": "Attachment service request failed."})
+        result = response(500, {"message": "Attachment service request failed."})
+        _log_invocation(context, method, path, result["statusCode"])
+        return result
+
+
+def _log_invocation(context, method, path, status_code):
+    trace_header = os.environ.get("_X_AMZN_TRACE_ID", "")
+    trace_root = next(
+        (
+            value.removeprefix("Root=")
+            for value in trace_header.split(";")
+            if value.startswith("Root=")
+        ),
+        "",
+    )
+    LOGGER.info(
+        json.dumps(
+            {
+                "operation": path.rsplit("/", 1)[-1] or "unknown",
+                "httpMethod": method,
+                "statusCode": status_code,
+                "lambdaRequestId": getattr(context, "aws_request_id", None),
+                "xrayTraceId": trace_root or None,
+            },
+            separators=(",", ":"),
+        )
+    )
 
 
 def create_upload_authorization(body):

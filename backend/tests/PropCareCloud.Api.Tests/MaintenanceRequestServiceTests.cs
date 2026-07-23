@@ -139,6 +139,7 @@ public sealed class MaintenanceRequestServiceTests
         var published = Assert.Single(publisher.PublishedEvents);
         Assert.Equal(NotificationEventTypes.MaintenanceRequestCreated, published.EventType);
         Assert.Equal(created.Id, published.MaintenanceRequestId);
+        Assert.Equal([seed.Tenant.Id], published.TargetProfileIds);
         Assert.Equal(1, await dbContext.MaintenanceRequests.CountAsync());
     }
 
@@ -168,6 +169,9 @@ public sealed class MaintenanceRequestServiceTests
         Assert.NotNull(unchanged);
         var published = Assert.Single(publisher.PublishedEvents);
         Assert.Equal(NotificationEventTypes.MaintenanceRequestAssigned, published.EventType);
+        Assert.Equal(
+            [seed.Tenant.Id, seed.Staff.Id],
+            published.TargetProfileIds);
     }
 
     [Fact]
@@ -198,6 +202,7 @@ public sealed class MaintenanceRequestServiceTests
         Assert.Equal(
             NotificationEventTypes.MaintenanceRequestStatusChanged,
             published.EventType);
+        Assert.Equal([seed.Tenant.Id], published.TargetProfileIds);
     }
 
     [Fact]
@@ -620,6 +625,31 @@ public sealed class MaintenanceRequestServiceTests
     }
 
     [Fact]
+    public async Task DeleteRequestAsync_PreservesRequestWithNotificationHistory()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedMaintenanceGraphAsync(dbContext);
+        dbContext.UserNotifications.Add(new UserNotification
+        {
+            UserProfileId = seed.Tenant.Id,
+            EventId = Guid.NewGuid(),
+            CorrelationId = Guid.NewGuid(),
+            EventType = NotificationEventTypes.MaintenanceRequestCreated,
+            MaintenanceRequestId = seed.Request!.Id,
+            Title = "Maintenance request created",
+            Message = "A maintenance request was submitted and is ready for review."
+        });
+        await dbContext.SaveChangesAsync();
+        var service = CreateService(dbContext);
+
+        var deleted = await service.DeleteRequestAsync(seed.Request.Id);
+
+        Assert.False(deleted);
+        Assert.NotNull(await dbContext.MaintenanceRequests.FindAsync(seed.Request.Id));
+    }
+
+    [Fact]
     public void PropertiesController_RequiresAdminOrManagerPolicy()
     {
         var authorizeAttribute = typeof(PropertiesController)
@@ -641,7 +671,7 @@ public sealed class MaintenanceRequestServiceTests
         AppDbContext dbContext,
         Guid? userProfileId = null,
         UserRole role = UserRole.AdminOwner,
-        ITask2NotificationPublisher? notificationPublisher = null)
+        IUserNotificationService? notificationPublisher = null)
     {
         return new MaintenanceRequestService(
             dbContext,

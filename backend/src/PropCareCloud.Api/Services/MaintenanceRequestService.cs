@@ -29,7 +29,7 @@ public interface IMaintenanceRequestService
 public sealed class MaintenanceRequestService(
     AppDbContext dbContext,
     ICurrentUserService currentUser,
-    ITask2NotificationPublisher notificationPublisher) : IMaintenanceRequestService
+    IUserNotificationService notificationService) : IMaintenanceRequestService
 {
     public async Task<List<MaintenanceRequestResponse>> GetRequestsAsync(
         MaintenanceStatus? status = null,
@@ -136,7 +136,7 @@ public sealed class MaintenanceRequestService(
             return null;
         }
 
-        var dispatch = await notificationPublisher.PublishAsync(NotificationEvent.Create(
+        var dispatch = await notificationService.StoreAndPublishAsync(NotificationEvent.Create(
             NotificationEventTypes.MaintenanceRequestCreated,
             maintenanceRequest.Id,
             currentUser.UserProfileId,
@@ -215,7 +215,7 @@ public sealed class MaintenanceRequestService(
             return response;
         }
 
-        var dispatch = await notificationPublisher.PublishAsync(NotificationEvent.Create(
+        var dispatch = await notificationService.StoreAndPublishAsync(NotificationEvent.Create(
             NotificationEventTypes.MaintenanceRequestAssigned,
             maintenanceRequest.Id,
             currentUser.UserProfileId,
@@ -255,7 +255,7 @@ public sealed class MaintenanceRequestService(
             }
             .Where(id => id.HasValue)
             .Select(id => id!.Value);
-        var dispatch = await notificationPublisher.PublishAsync(NotificationEvent.Create(
+        var dispatch = await notificationService.StoreAndPublishAsync(NotificationEvent.Create(
             NotificationEventTypes.MaintenanceRequestStatusChanged,
             maintenanceRequest.Id,
             currentUser.UserProfileId,
@@ -283,7 +283,9 @@ public sealed class MaintenanceRequestService(
         var hasRelatedRecords = await dbContext.MaintenanceRequestComments
             .AnyAsync(comment => comment.MaintenanceRequestId == id) ||
             await dbContext.MaintenanceRequestAttachments
-                .AnyAsync(attachment => attachment.MaintenanceRequestId == id);
+                .AnyAsync(attachment => attachment.MaintenanceRequestId == id) ||
+            await dbContext.UserNotifications
+                .AnyAsync(notification => notification.MaintenanceRequestId == id);
         if (hasRelatedRecords)
         {
             return false;

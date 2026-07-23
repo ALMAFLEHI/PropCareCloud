@@ -36,6 +36,7 @@ import type {
   UpdateUserProfileRequest,
   UserAccountDetailResponse,
   UserAccountSummaryResponse,
+  UserNotificationResponse,
   UserRole,
   UserProfileSummaryResponse,
 } from '../types/api'
@@ -439,6 +440,40 @@ export async function getTenantRegistrationAvailableUnits(): Promise<
     '/api/tenant-registrations/available-units',
   )
   return response.data
+}
+
+export async function getNotifications(
+  limit = 20,
+  unreadOnly = false,
+): Promise<UserNotificationResponse[]> {
+  const response = await propCareApi.get<UserNotificationResponse[]>(
+    '/api/notifications',
+    { params: { limit, unreadOnly } },
+  )
+  return response.data
+}
+
+export async function getUnreadNotificationCount(): Promise<number> {
+  const response = await propCareApi.get<{ unreadCount: number }>(
+    '/api/notifications/unread-count',
+  )
+  return response.data.unreadCount
+}
+
+export async function markNotificationRead(
+  notificationId: string,
+): Promise<UserNotificationResponse> {
+  const response = await propCareApi.patch<UserNotificationResponse>(
+    `/api/notifications/${notificationId}/read`,
+  )
+  return response.data
+}
+
+export async function markAllNotificationsRead(): Promise<number> {
+  const response = await propCareApi.patch<{ changedCount: number }>(
+    '/api/notifications/read-all',
+  )
+  return response.data.changedCount
 }
 
 export { apiBaseUrl }

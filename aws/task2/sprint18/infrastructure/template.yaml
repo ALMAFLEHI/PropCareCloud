@@ -124,6 +124,11 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/propcarecloud-task2-notification-publisher:*
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                Resource: '*'
       Tags:
         - Key: Project
           Value: PropCareCloud
@@ -141,6 +146,8 @@ Resources:
       Role: !GetAtt PublisherFunctionRole.Arn
       Timeout: 10
       MemorySize: 128
+      TracingConfig:
+        Mode: Active
       Code:
         S3Bucket: !Ref LambdaCodeBucket
         S3Key: !Ref PublisherCodeKey
@@ -190,6 +197,11 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/propcarecloud-task2-notification-processor:*
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                Resource: '*'
       Tags:
         - Key: Project
           Value: PropCareCloud
@@ -207,6 +219,8 @@ Resources:
       Role: !GetAtt ProcessorFunctionRole.Arn
       Timeout: 15
       MemorySize: 128
+      TracingConfig:
+        Mode: Active
       Code:
         S3Bucket: !Ref LambdaCodeBucket
         S3Key: !Ref ProcessorCodeKey
@@ -293,6 +307,7 @@ Resources:
       RestApiId: !Ref NotificationApi
       DeploymentId: !Ref NotificationApiDeployment
       StageName: prod
+      TracingEnabled: true
       MethodSettings:
         - ResourcePath: '/*'
           HttpMethod: '*'

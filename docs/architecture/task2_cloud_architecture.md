@@ -41,7 +41,12 @@ Sprint 18 adds a separate asynchronous notification stack:
 - Processor Lambda with partial batch failure support.
 - Structured Lambda runtime logs retained for 14 days.
 
-Sprint 19 remains responsible for custom CloudWatch monitoring and X-Ray tracing.
+Sprint 19 adds:
+
+- `UserNotification` records in the existing RDS database for a minimal authenticated inbox.
+- A top-bar bell that reads only the signed-in user's notifications through the backend.
+- A separate CloudWatch dashboard and focused alarms across the serverless and Task 1 runtime.
+- Native X-Ray tracing on the Sprint 17/18 API Gateway stages and Lambda functions.
 
 The existing backend remains the security boundary. It validates JWT identity, role permissions, maintenance request access, and tenant isolation before calling the serverless attachment service.
 
@@ -49,13 +54,32 @@ The existing backend remains the security boundary. It validates JWT identity, r
 flowchart LR
     Browser["React frontend on S3"] --> Backend["ASP.NET Core on Elastic Beanstalk"]
     Backend --> RDS["Amazon RDS PostgreSQL"]
+    RDS --> Inbox["Current-user UserNotifications"]
+    Inbox --> Browser
+    Backend --> AttachmentGateway["Sprint 17 API Gateway"]
+    AttachmentGateway --> Presign["Presign Lambda"]
+    Presign --> PrivateS3["Private attachment S3"]
     Backend --> Gateway["Sprint 18 API Gateway"]
     Gateway --> Publisher["Publisher Lambda"]
     Publisher --> SNS["Encrypted SNS topic"]
     SNS --> Queue["Encrypted SQS queue"]
     Queue --> Processor["Processor Lambda"]
-    Processor --> Logs["Structured CloudWatch runtime logs"]
+    Processor --> Logs["Structured CloudWatch logs"]
     Queue -->|"redrive after 3 receives"| DLQ["Encrypted SQS DLQ"]
+    AttachmentGateway --> XRay["AWS X-Ray"]
+    Presign --> XRay
+    Gateway --> XRay
+    Publisher --> XRay
+    Processor --> XRay
+    AttachmentGateway --> Monitoring["CloudWatch dashboard and alarms"]
+    Presign --> Monitoring
+    Gateway --> Monitoring
+    Publisher --> Monitoring
+    SNS --> Monitoring
+    Queue --> Monitoring
+    DLQ --> Monitoring
+    Backend --> Monitoring
+    RDS --> Monitoring
 ```
 
 ## 4. Architecture Change Summary
@@ -97,6 +121,8 @@ Sprint 18 adds notification publishing after attachment metadata persistence wit
 6. Processor Lambda validates each message again and records a safe structured processing result.
 7. Successful messages are removed; repeated failures are redriven to the encrypted DLQ after three receives.
 8. A notification dispatch failure never rolls back the committed business operation.
+
+Sprint 19 extends this flow by storing one `UserNotification` row per valid recipient before publishing the same event. Inbox storage and publishing share the same event and correlation IDs, remain non-blocking after the business commit, and never grant Lambda direct RDS access.
 
 ## 7. Security Design
 
@@ -189,7 +215,7 @@ X-Ray:
 - Service map.
 - Latency and failure analysis.
 
-Sprint 18 uses only normal Lambda runtime log groups as processing evidence. Custom dashboards, alarms, metrics analysis, and X-Ray are deliberately deferred to Sprint 19.
+Sprint 19 provides the separate `propcarecloud-task2-sprint19` monitoring stack with a concise dashboard, nine focused alarms, and Logs Insights widgets. Native active X-Ray tracing is enabled on both API Gateway `prod` stages and all three Task 2 Lambda functions. Structured logs expose safe status and correlation fields only.
 
 ## 11. Sprint 17 Live Deployment
 
@@ -213,9 +239,30 @@ Sprint 18 uses only normal Lambda runtime log groups as processing evidence. Cus
 - Maintenance status, request creation, staff progress, and attachment confirmation produced queued notifications through the normal backend flow.
 - Structured publisher and processor records matched on event and correlation IDs; the primary queue and DLQ were empty after processing.
 - Negative contract, API-key, authentication, RBAC, tenant-isolation, and duplicate-suppression tests passed.
-- CloudWatch runtime logs are evidence only; Sprint 19 monitoring was not implemented.
+- Sprint 18 originally closed with runtime logs only; Sprint 19 now adds the separate dashboard, alarms, Logs Insights, and X-Ray configuration.
 
-## 13. Task 1 Protection
+## 13. Sprint 19 Design
+
+- The existing backend stores isolated notification rows in RDS and remains the only notification read boundary.
+- Authenticated users can list, count, and mark only their own records.
+- The React top bar polls every 45 seconds and cleans up polling when it unmounts.
+- The separate monitoring stack owns the dashboard and alarms only.
+- Sprint 17/18 stacks remain owners of their APIs, Lambdas, IAM roles, queues, and topics.
+- X-Ray permission is limited to the two AWS-required telemetry actions with `Resource "*"`.
+- No Lambda receives RDS permission and no service key is sent to the browser.
+
+### Sprint 19 Live Result
+
+- Separate monitoring stack `propcarecloud-task2-sprint19` is `UPDATE_COMPLETE`.
+- Dashboard `propcarecloud-task2-monitoring` contains 11 metric and Logs Insights widgets.
+- Nine focused alarms are deployed with missing data treated as non-breaching and no alarm actions.
+- Both Task 2 API Gateway stages and all three Lambda functions use active native X-Ray tracing.
+- The additive `AddUserNotifications` migration is applied with zero pending and seven applied migrations.
+- Authenticated inbox APIs and the React bell/panel were verified against live RDS-backed notifications.
+- Sprint 17 attachment and Sprint 18 queue-processing regression checks remain successful.
+- Task 1 application data and deployment resources remain operational and unchanged in ownership.
+
+## 14. Task 1 Protection
 
 - Task 1 deployment remains operational.
 - Existing S3 frontend bucket, Elastic Beanstalk application/environment, and RDS instance were preserved.
@@ -225,7 +272,7 @@ Sprint 18 uses only normal Lambda runtime log groups as processing evidence. Cus
 - Task 2 components are additive.
 - All future code changes must pass Task 1 regression validation.
 
-## 14. Sprint Mapping
+## 15. Sprint Mapping
 
 | Sprint | Scope |
 | --- | --- |

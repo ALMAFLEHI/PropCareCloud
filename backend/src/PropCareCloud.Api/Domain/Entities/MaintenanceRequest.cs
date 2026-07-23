@@ -22,4 +22,5 @@ public sealed class MaintenanceRequest
 
     public ICollection<MaintenanceRequestComment> Comments { get; set; } = new List<MaintenanceRequestComment>();
     public ICollection<MaintenanceRequestAttachment> Attachments { get; set; } = new List<MaintenanceRequestAttachment>();
+    public ICollection<UserNotification> Notifications { get; set; } = new List<UserNotification>();
 }

@@ -181,6 +181,9 @@ public sealed class MaintenanceAttachmentServiceTests
         var published = Assert.Single(publisher.PublishedEvents);
         Assert.Equal("AttachmentConfirmed", published.EventType);
         Assert.Equal(seed.Request.Id, published.MaintenanceRequestId);
+        Assert.Equal(
+            [seed.Tenant.Id, seed.AssignedStaff.Id],
+            published.TargetProfileIds);
         Assert.Single(dbContext.MaintenanceRequestAttachments);
     }
 
@@ -322,7 +325,7 @@ public sealed class MaintenanceAttachmentServiceTests
         Guid userProfileId,
         UserRole role,
         FakeAttachmentGateway gateway,
-        ITask2NotificationPublisher? notificationPublisher = null)
+        IUserNotificationService? notificationPublisher = null)
     {
         var currentUser = new FakeCurrentUserService(userProfileId, role);
         var publisher = notificationPublisher ?? new RecordingNotificationPublisher();

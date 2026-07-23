@@ -133,6 +133,7 @@ if (isDatabaseConfigured)
     builder.Services.AddScoped<IAuthService, AuthService>();
     builder.Services.AddScoped<IUserManagementService, UserManagementService>();
     builder.Services.AddScoped<ITenantRegistrationService, TenantRegistrationService>();
+    builder.Services.AddScoped<IUserNotificationService, UserNotificationService>();
 }
 builder.Services.AddCors(options =>
 {

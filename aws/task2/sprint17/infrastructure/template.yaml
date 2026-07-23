@@ -91,6 +91,11 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/propcarecloud-task2-presign-service:*
+              - Effect: Allow
+                Action:
+                  - xray:PutTraceSegments
+                  - xray:PutTelemetryRecords
+                Resource: '*'
       Tags:
         - Key: Project
           Value: PropCareCloud
@@ -110,6 +115,8 @@ Resources:
       Role: !GetAtt PresignFunctionRole.Arn
       Timeout: 10
       MemorySize: 128
+      TracingConfig:
+        Mode: Active
       Code:
         S3Bucket: !Ref LambdaCodeBucket
         S3Key: !Ref LambdaCodeKey
@@ -245,6 +252,7 @@ Resources:
       RestApiId: !Ref AttachmentApi
       DeploymentId: !Ref AttachmentApiDeployment
       StageName: prod
+      TracingEnabled: true
       MethodSettings:
         - ResourcePath: '/*'
           HttpMethod: '*'

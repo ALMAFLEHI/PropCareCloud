@@ -71,10 +71,10 @@ Sprint 14 does not add API Gateway, Lambda, S3 maintenance attachments, SNS, SQS
 - Sprint 16: Architecture Design - complete
 - Sprint 17: API Gateway + Lambda + S3 Integration - complete; live end-to-end verified
 - Sprint 18: SNS + SQS Notification Pipeline - complete; live end-to-end verified
-- Sprint 19: CloudWatch + X-Ray Monitoring - next
-- Sprint 20: Task 2 Final DOCX Report
+- Sprint 19: CloudWatch + X-Ray Monitoring and Notification Inbox - complete; live end-to-end verified
+- Sprint 20: Task 2 Final DOCX Report - next
 
-Task 2 extends the completed Task 1 cloud application on the `task2` branch. Sprint 17 provides backend-authorized direct-to-private-S3 maintenance attachments. Sprint 18 adds an asynchronous notification path from the existing ASP.NET Core backend through API Gateway, a Python 3.12 publisher Lambda, encrypted SNS, encrypted SQS with a dead-letter queue, and a Python 3.12 processor Lambda. Maintenance creation, assignment, status, and attachment events were verified live; notification failure remains non-blocking for the business operation. Task 1 remains operational, the backend remains the JWT, RBAC, tenant-isolation, and service-key boundary, and no AWS credential or service API key is exposed to the frontend.
+Task 2 extends the completed Task 1 cloud application on the `task2` branch. Sprint 17 provides backend-authorized direct-to-private-S3 maintenance attachments. Sprint 18 adds an asynchronous notification path from the existing ASP.NET Core backend through API Gateway, a Python 3.12 publisher Lambda, encrypted SNS, encrypted SQS with a dead-letter queue, and a Python 3.12 processor Lambda. Sprint 19 adds an RDS-backed current-user notification inbox, a compact React notification bell, a separate CloudWatch dashboard with focused alarms and Logs Insights widgets, and native active X-Ray tracing across both Task 2 API Gateway stages and all three Lambda functions. The live path was verified end to end while notification failure remains non-blocking for business operations. Task 1 remains operational, the backend remains the JWT, RBAC, tenant-isolation, and service-key boundary, and no AWS credential or service API key is exposed to the frontend.
 
 ## Sprint 2 Backend Foundation
 

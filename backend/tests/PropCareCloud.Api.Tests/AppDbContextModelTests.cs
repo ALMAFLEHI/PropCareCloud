@@ -35,6 +35,28 @@ public sealed class AppDbContextModelTests
     }
 
     [Fact]
+    public void AppDbContext_ConfiguresNotificationUniquenessAndInboxIndex()
+    {
+        var options = new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase($"propcare-notification-model-{Guid.NewGuid()}")
+            .Options;
+
+        using var dbContext = new AppDbContext(options);
+        var entity = dbContext.Model.FindEntityType(typeof(UserNotification));
+
+        Assert.NotNull(entity);
+        var recipientEventIndex = entity.GetIndexes().Single(index =>
+            index.Properties.Select(property => property.Name)
+                .SequenceEqual(["UserProfileId", "EventId"]));
+        var inboxIndex = entity.GetIndexes().Single(index =>
+            index.Properties.Select(property => property.Name)
+                .SequenceEqual(["UserProfileId", "IsRead", "CreatedAtUtc"]));
+
+        Assert.True(recipientEventIndex.IsUnique);
+        Assert.False(inboxIndex.IsUnique);
+    }
+
+    [Fact]
     public async Task AppDbContext_CanSaveAndReadMaintenanceRequestGraph()
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()

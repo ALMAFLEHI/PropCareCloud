@@ -33,7 +33,7 @@ public sealed class MaintenanceAttachmentService(
     ICurrentUserService currentUser,
     ITask2AttachmentGateway attachmentGateway,
     IOptions<Task2AttachmentOptions> options,
-    ITask2NotificationPublisher notificationPublisher) : IMaintenanceAttachmentService
+    IUserNotificationService notificationService) : IMaintenanceAttachmentService
 {
     private readonly Task2AttachmentOptions attachmentOptions = options.Value;
 
@@ -211,7 +211,7 @@ public sealed class MaintenanceAttachmentService(
             }
             .Where(id => id.HasValue)
             .Select(id => id!.Value);
-        var dispatch = await notificationPublisher.PublishAsync(
+        var dispatch = await notificationService.StoreAndPublishAsync(
             NotificationEvent.Create(
                 NotificationEventTypes.AttachmentConfirmed,
                 requestId,

@@ -14,6 +14,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<AuthUserAccount> AuthUserAccounts => Set<AuthUserAccount>();
     public DbSet<TenantUnitAssignment> TenantUnitAssignments => Set<TenantUnitAssignment>();
     public DbSet<TenantRegistrationRequest> TenantRegistrationRequests => Set<TenantRegistrationRequest>();
+    public DbSet<UserNotification> UserNotifications => Set<UserNotification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -28,6 +29,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
         ConfigureAuthUserAccount(modelBuilder);
         ConfigureTenantUnitAssignment(modelBuilder);
         ConfigureTenantRegistrationRequest(modelBuilder);
+        ConfigureUserNotification(modelBuilder);
     }
 
     private static void ConfigureUserProfile(ModelBuilder modelBuilder)
@@ -276,6 +278,47 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
             entity.HasOne(request => request.ApprovedRentalUnit)
                 .WithMany()
                 .HasForeignKey(request => request.ApprovedRentalUnitId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private static void ConfigureUserNotification(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<UserNotification>(entity =>
+        {
+            entity.ToTable("user_notifications");
+            entity.HasKey(notification => notification.Id);
+
+            entity.Property(notification => notification.UserProfileId).IsRequired();
+            entity.Property(notification => notification.EventId).IsRequired();
+            entity.Property(notification => notification.CorrelationId).IsRequired();
+            entity.Property(notification => notification.EventType).HasMaxLength(100).IsRequired();
+            entity.Property(notification => notification.Title).HasMaxLength(120).IsRequired();
+            entity.Property(notification => notification.Message).HasMaxLength(500).IsRequired();
+            entity.Property(notification => notification.IsRead).IsRequired();
+            entity.Property(notification => notification.CreatedAtUtc).IsRequired();
+
+            entity.HasIndex(notification => new
+                {
+                    notification.UserProfileId,
+                    notification.EventId
+                })
+                .IsUnique();
+            entity.HasIndex(notification => new
+                {
+                    notification.UserProfileId,
+                    notification.IsRead,
+                    notification.CreatedAtUtc
+                });
+
+            entity.HasOne(notification => notification.UserProfile)
+                .WithMany(user => user.Notifications)
+                .HasForeignKey(notification => notification.UserProfileId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(notification => notification.MaintenanceRequest)
+                .WithMany(request => request.Notifications)
+                .HasForeignKey(notification => notification.MaintenanceRequestId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }

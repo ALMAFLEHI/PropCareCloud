@@ -160,7 +160,7 @@ public sealed class MaintenanceRequestsController(
         {
             return Conflict(new
             {
-                message = "Maintenance request cannot be deleted while comments or attachments exist."
+                message = "Maintenance request cannot be deleted while comments, attachments, or notification history exist."
             });
         }
 

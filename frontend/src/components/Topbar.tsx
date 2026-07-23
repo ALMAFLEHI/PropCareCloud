@@ -1,6 +1,7 @@
 import { CircleCheck, Cloud, LogOut, UserRound } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import NotificationBell from './NotificationBell'
 
 function Topbar() {
   const { logout, user } = useAuth()
@@ -33,6 +34,7 @@ function Topbar() {
             <CircleCheck className="size-4" aria-hidden="true" />
             <span>Secure Portal</span>
           </div>
+          {user && <NotificationBell />}
           {user && (
             <div className="inline-flex w-fit items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-medium text-slate-700">
               <UserRound className="size-4" aria-hidden="true" />

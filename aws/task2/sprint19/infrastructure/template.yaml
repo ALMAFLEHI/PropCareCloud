@@ -1,0 +1,391 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: PropCare Cloud Task 2 Sprint 19 CloudWatch dashboard and alarms
+
+Parameters:
+  Sprint17ApiName:
+    Type: String
+  Sprint18ApiName:
+    Type: String
+  Sprint17LambdaName:
+    Type: String
+  Sprint18PublisherLambdaName:
+    Type: String
+  Sprint18ProcessorLambdaName:
+    Type: String
+  NotificationTopicName:
+    Type: String
+  NotificationQueueName:
+    Type: String
+  NotificationDeadLetterQueueName:
+    Type: String
+  ElasticBeanstalkEnvironmentName:
+    Type: String
+  RdsDatabaseIdentifier:
+    Type: String
+
+Resources:
+  MonitoringDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: propcarecloud-task2-monitoring
+      DashboardBody: !Sub |
+        {
+          "start": "-PT6H",
+          "periodOverride": "inherit",
+          "widgets": [
+            {
+              "type": "text",
+              "x": 0,
+              "y": 0,
+              "width": 24,
+              "height": 2,
+              "properties": {
+                "markdown": "# PropCare Cloud Task 2 Operations\nSprint 17 attachments, Sprint 18 notifications, Task 1 hosting, and RDS health."
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 2,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "Lambda invocations and errors",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "period": 300,
+                "stat": "Sum",
+                "metrics": [
+                  ["AWS/Lambda", "Invocations", "FunctionName", "${Sprint17LambdaName}", {"label": "Attachment invocations"}],
+                  ["AWS/Lambda", "Errors", "FunctionName", "${Sprint17LambdaName}", {"label": "Attachment errors"}],
+                  ["AWS/Lambda", "Invocations", "FunctionName", "${Sprint18PublisherLambdaName}", {"label": "Publisher invocations"}],
+                  ["AWS/Lambda", "Errors", "FunctionName", "${Sprint18PublisherLambdaName}", {"label": "Publisher errors"}],
+                  ["AWS/Lambda", "Invocations", "FunctionName", "${Sprint18ProcessorLambdaName}", {"label": "Processor invocations"}],
+                  ["AWS/Lambda", "Errors", "FunctionName", "${Sprint18ProcessorLambdaName}", {"label": "Processor errors"}]
+                ]
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 2,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "Lambda duration",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "period": 300,
+                "stat": "Average",
+                "metrics": [
+                  ["AWS/Lambda", "Duration", "FunctionName", "${Sprint17LambdaName}", {"label": "Attachment duration"}],
+                  ["AWS/Lambda", "Duration", "FunctionName", "${Sprint18PublisherLambdaName}", {"label": "Publisher duration"}],
+                  ["AWS/Lambda", "Duration", "FunctionName", "${Sprint18ProcessorLambdaName}", {"label": "Processor duration"}]
+                ]
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 8,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "API Gateway requests and failures",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "period": 300,
+                "stat": "Sum",
+                "metrics": [
+                  ["AWS/ApiGateway", "Count", "ApiName", "${Sprint17ApiName}", "Stage", "prod", {"label": "Attachment requests"}],
+                  ["AWS/ApiGateway", "4XXError", "ApiName", "${Sprint17ApiName}", "Stage", "prod", {"label": "Attachment 4XX"}],
+                  ["AWS/ApiGateway", "5XXError", "ApiName", "${Sprint17ApiName}", "Stage", "prod", {"label": "Attachment 5XX"}],
+                  ["AWS/ApiGateway", "Count", "ApiName", "${Sprint18ApiName}", "Stage", "prod", {"label": "Notification requests"}],
+                  ["AWS/ApiGateway", "4XXError", "ApiName", "${Sprint18ApiName}", "Stage", "prod", {"label": "Notification 4XX"}],
+                  ["AWS/ApiGateway", "5XXError", "ApiName", "${Sprint18ApiName}", "Stage", "prod", {"label": "Notification 5XX"}]
+                ]
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 8,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "API Gateway latency",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "period": 300,
+                "stat": "Average",
+                "metrics": [
+                  ["AWS/ApiGateway", "Latency", "ApiName", "${Sprint17ApiName}", "Stage", "prod", {"label": "Attachment latency"}],
+                  ["AWS/ApiGateway", "Latency", "ApiName", "${Sprint18ApiName}", "Stage", "prod", {"label": "Notification latency"}]
+                ]
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 14,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "SNS delivery",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "period": 300,
+                "stat": "Sum",
+                "metrics": [
+                  ["AWS/SNS", "NumberOfMessagesPublished", "TopicName", "${NotificationTopicName}", {"label": "Published"}],
+                  ["AWS/SNS", "NumberOfNotificationsFailed", "TopicName", "${NotificationTopicName}", {"label": "Failed"}]
+                ]
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 14,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "SQS processing and dead letters",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "period": 300,
+                "stat": "Maximum",
+                "metrics": [
+                  ["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", "${NotificationQueueName}", {"label": "Queue visible"}],
+                  ["AWS/SQS", "ApproximateAgeOfOldestMessage", "QueueName", "${NotificationQueueName}", {"label": "Oldest seconds"}],
+                  ["AWS/SQS", "NumberOfMessagesReceived", "QueueName", "${NotificationQueueName}", {"label": "Received"}],
+                  ["AWS/SQS", "NumberOfMessagesDeleted", "QueueName", "${NotificationQueueName}", {"label": "Deleted"}],
+                  ["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", "${NotificationDeadLetterQueueName}", {"label": "DLQ visible"}]
+                ]
+              }
+            },
+            {
+              "type": "metric",
+              "x": 0,
+              "y": 20,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "Elastic Beanstalk environment health",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "period": 300,
+                "stat": "Average",
+                "metrics": [
+                  ["AWS/ElasticBeanstalk", "EnvironmentHealth", "EnvironmentName", "${ElasticBeanstalkEnvironmentName}"]
+                ]
+              }
+            },
+            {
+              "type": "metric",
+              "x": 12,
+              "y": 20,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "RDS PostgreSQL health",
+                "region": "${AWS::Region}",
+                "view": "timeSeries",
+                "period": 300,
+                "metrics": [
+                  ["AWS/RDS", "CPUUtilization", "DBInstanceIdentifier", "${RdsDatabaseIdentifier}", {"stat": "Average", "label": "CPU %"}],
+                  ["AWS/RDS", "DatabaseConnections", "DBInstanceIdentifier", "${RdsDatabaseIdentifier}", {"stat": "Average", "label": "Connections"}],
+                  ["AWS/RDS", "FreeStorageSpace", "DBInstanceIdentifier", "${RdsDatabaseIdentifier}", {"stat": "Minimum", "label": "Free storage"}]
+                ]
+              }
+            },
+            {
+              "type": "log",
+              "x": 0,
+              "y": 26,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "Publisher correlation log",
+                "region": "${AWS::Region}",
+                "view": "table",
+                "query": "SOURCE '/aws/lambda/${Sprint18PublisherLambdaName}' | fields jsonParse(@message) as log | filter ispresent(log.publishStatus) | fields @timestamp, log.eventType as eventType, log.publishStatus as publishStatus, log.correlationId as correlationId, log.xrayTraceId as xrayTraceId | sort @timestamp desc | limit 20"
+              }
+            },
+            {
+              "type": "log",
+              "x": 12,
+              "y": 26,
+              "width": 12,
+              "height": 6,
+              "properties": {
+                "title": "Processor correlation log",
+                "region": "${AWS::Region}",
+                "view": "table",
+                "query": "SOURCE '/aws/lambda/${Sprint18ProcessorLambdaName}' | fields jsonParse(@message) as log | filter ispresent(log.processingStatus) | fields @timestamp, log.eventType as eventType, log.processingStatus as processingStatus, log.correlationId as correlationId, log.xrayTraceId as xrayTraceId | sort @timestamp desc | limit 20"
+              }
+            }
+          ]
+        }
+
+  Sprint17LambdaErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: propcarecloud-sprint17-lambda-errors
+      AlarmDescription: Attachment Lambda reported one or more errors.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref Sprint17LambdaName
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  Sprint18PublisherErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: propcarecloud-sprint18-publisher-errors
+      AlarmDescription: Notification publisher Lambda reported one or more errors.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref Sprint18PublisherLambdaName
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  Sprint18ProcessorErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: propcarecloud-sprint18-processor-errors
+      AlarmDescription: Notification processor Lambda reported one or more errors.
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref Sprint18ProcessorLambdaName
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  Sprint17Api5xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: propcarecloud-sprint17-api-5xx
+      AlarmDescription: Attachment API Gateway reported a server error.
+      Namespace: AWS/ApiGateway
+      MetricName: 5XXError
+      Dimensions:
+        - Name: ApiName
+          Value: !Ref Sprint17ApiName
+        - Name: Stage
+          Value: prod
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  Sprint18Api5xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: propcarecloud-sprint18-api-5xx
+      AlarmDescription: Notification API Gateway reported a server error.
+      Namespace: AWS/ApiGateway
+      MetricName: 5XXError
+      Dimensions:
+        - Name: ApiName
+          Value: !Ref Sprint18ApiName
+        - Name: Stage
+          Value: prod
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  QueueAgeAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: propcarecloud-notification-queue-age
+      AlarmDescription: A notification message has waited longer than five minutes.
+      Namespace: AWS/SQS
+      MetricName: ApproximateAgeOfOldestMessage
+      Dimensions:
+        - Name: QueueName
+          Value: !Ref NotificationQueueName
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 300
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+
+  DeadLetterQueueAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: propcarecloud-notification-dlq-visible
+      AlarmDescription: One or more notification events reached the dead-letter queue.
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !Ref NotificationDeadLetterQueueName
+      Statistic: Maximum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  ElasticBeanstalkHealthAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: propcarecloud-elastic-beanstalk-health
+      AlarmDescription: Elastic Beanstalk enhanced environment health is degraded or worse.
+      Namespace: AWS/ElasticBeanstalk
+      MetricName: EnvironmentHealth
+      Dimensions:
+        - Name: EnvironmentName
+          Value: !Ref ElasticBeanstalkEnvironmentName
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 15
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  RdsCpuAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: propcarecloud-rds-high-cpu
+      AlarmDescription: RDS PostgreSQL CPU utilization is above 80 percent.
+      Namespace: AWS/RDS
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Ref RdsDatabaseIdentifier
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 2
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+
+Outputs:
+  DashboardName:
+    Value: !Ref MonitoringDashboard
+  AlarmCount:
+    Value: '9'

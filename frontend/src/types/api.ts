@@ -318,3 +318,15 @@ export type AttachmentDownloadAuthorizationResponse = {
   downloadUrl: string
   expiresInSeconds: number
 }
+
+export type UserNotificationResponse = {
+  id: string
+  eventId: string
+  eventType: string
+  maintenanceRequestId?: string | null
+  title: string
+  message: string
+  isRead: boolean
+  createdAtUtc: string
+  readAtUtc?: string | null
+}

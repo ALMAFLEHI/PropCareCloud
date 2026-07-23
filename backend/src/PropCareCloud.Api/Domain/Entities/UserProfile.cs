@@ -19,4 +19,5 @@ public sealed class UserProfile
     public ICollection<TenantUnitAssignment> TenantUnitAssignments { get; set; } = new List<TenantUnitAssignment>();
     public ICollection<MaintenanceRequestComment> Comments { get; set; } = new List<MaintenanceRequestComment>();
     public ICollection<MaintenanceRequestAttachment> UploadedAttachments { get; set; } = new List<MaintenanceRequestAttachment>();
+    public ICollection<UserNotification> Notifications { get; set; } = new List<UserNotification>();
 }
