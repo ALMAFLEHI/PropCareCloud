@@ -153,6 +153,7 @@ function RequestsPage() {
   const [tenants, setTenants] = useState<UserProfileSummaryResponse[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [updatingRequestId, setUpdatingRequestId] = useState('')
@@ -246,10 +247,16 @@ function RequestsPage() {
   async function handleStatusChange(requestId: string, value: string) {
     setUpdatingRequestId(requestId)
     setError('')
+    setSuccessMessage('')
 
     try {
-      await updateMaintenanceRequestStatus(requestId, { status: Number(value) })
+      const updated = await updateMaintenanceRequestStatus(requestId, {
+        status: Number(value),
+      })
       await loadRequests()
+      if (updated.notificationMessage) {
+        setSuccessMessage(updated.notificationMessage)
+      }
     } catch {
       setError('Status update failed. Confirm the request is assigned to your role.')
     } finally {
@@ -264,12 +271,16 @@ function RequestsPage() {
 
     setAssigningRequestId(requestId)
     setError('')
+    setSuccessMessage('')
 
     try {
-      await assignMaintenanceRequest(requestId, {
+      const updated = await assignMaintenanceRequest(requestId, {
         assignedStaffProfileId: staffProfileId,
       })
       await loadRequests()
+      if (updated.notificationMessage) {
+        setSuccessMessage(updated.notificationMessage)
+      }
     } catch {
       setError('Staff assignment failed. Confirm the selected user has the Maintenance Staff role.')
     } finally {
@@ -281,9 +292,10 @@ function RequestsPage() {
     event.preventDefault()
     setIsSubmitting(true)
     setError('')
+    setSuccessMessage('')
 
     try {
-      await createMaintenanceRequest({
+      const created = await createMaintenanceRequest({
         rentalUnitId: form.rentalUnitId.trim(),
         tenantProfileId: tenantRole
           ? user?.userProfileId ?? '00000000-0000-0000-0000-000000000000'
@@ -301,6 +313,9 @@ function RequestsPage() {
       })
       setIsModalOpen(false)
       await loadRequests()
+      if (created.notificationMessage) {
+        setSuccessMessage(created.notificationMessage)
+      }
     } catch {
       setError(
         tenantRole
@@ -394,6 +409,12 @@ function RequestsPage() {
       </section>
 
       {isLoading && <LoadingState title="Loading maintenance requests" />}
+
+      {successMessage && (
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-900">
+          {successMessage}
+        </div>
+      )}
 
       {error && (
         <ErrorState

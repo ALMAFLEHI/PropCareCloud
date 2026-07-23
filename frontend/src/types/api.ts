@@ -76,6 +76,8 @@ export type MaintenanceRequestResponse = {
   completedAtUtc?: string | null
   commentCount: number
   attachmentCount: number
+  notificationQueued?: boolean | null
+  notificationMessage?: string | null
 }
 
 export type MaintenanceRequestCreateRequest = {
@@ -308,6 +310,8 @@ export type MaintenanceAttachmentResponse = {
   uploadedByUserProfileId: string
   uploadedByName: string
   uploadedAtUtc: string
+  notificationQueued?: boolean | null
+  notificationMessage?: string | null
 }
 
 export type AttachmentDownloadAuthorizationResponse = {

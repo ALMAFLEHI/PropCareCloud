@@ -4,6 +4,7 @@ using PropCareCloud.Api.Configuration;
 using PropCareCloud.Api.Data;
 using PropCareCloud.Api.Domain.Entities;
 using PropCareCloud.Api.DTOs.MaintenanceAttachments;
+using PropCareCloud.Api.DTOs.Notifications;
 
 namespace PropCareCloud.Api.Services;
 
@@ -31,7 +32,8 @@ public sealed class MaintenanceAttachmentService(
     IMaintenanceRequestService maintenanceRequestService,
     ICurrentUserService currentUser,
     ITask2AttachmentGateway attachmentGateway,
-    IOptions<Task2AttachmentOptions> options) : IMaintenanceAttachmentService
+    IOptions<Task2AttachmentOptions> options,
+    ITask2NotificationPublisher notificationPublisher) : IMaintenanceAttachmentService
 {
     private readonly Task2AttachmentOptions attachmentOptions = options.Value;
 
@@ -193,7 +195,38 @@ public sealed class MaintenanceAttachmentService(
                 .AsNoTracking()
                 .Where(item => item.Id == attachment.Id))
             .SingleAsync(cancellationToken);
-        return AttachmentServiceResult<MaintenanceAttachmentResponse>.Success(saved);
+        var requestRecipients = await dbContext.MaintenanceRequests
+            .AsNoTracking()
+            .Where(item => item.Id == requestId)
+            .Select(item => new
+            {
+                item.TenantProfileId,
+                item.AssignedStaffProfileId
+            })
+            .SingleAsync(cancellationToken);
+        var targetProfileIds = new[]
+            {
+                (Guid?)requestRecipients.TenantProfileId,
+                requestRecipients.AssignedStaffProfileId
+            }
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value);
+        var dispatch = await notificationPublisher.PublishAsync(
+            NotificationEvent.Create(
+                NotificationEventTypes.AttachmentConfirmed,
+                requestId,
+                currentUser.UserProfileId,
+                NotificationTargetRoles.Multiple,
+                targetProfileIds,
+                "Maintenance attachment confirmed",
+                "A secure attachment was added to a maintenance request."),
+            cancellationToken);
+
+        return AttachmentServiceResult<MaintenanceAttachmentResponse>.Success(saved with
+        {
+            NotificationQueued = dispatch.NotificationQueued,
+            NotificationMessage = dispatch.NotificationMessage
+        });
     }
 
     public async Task<AttachmentServiceResult<List<MaintenanceAttachmentResponse>>> GetAttachmentsAsync(

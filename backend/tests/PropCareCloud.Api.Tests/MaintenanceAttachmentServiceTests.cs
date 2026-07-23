@@ -159,6 +159,32 @@ public sealed class MaintenanceAttachmentServiceTests
     }
 
     [Fact]
+    public async Task ConfirmUploadPublishesAttachmentEventAfterMetadataPersistence()
+    {
+        await using var dbContext = CreateContext();
+        var seed = await SeedAsync(dbContext);
+        var publisher = new RecordingNotificationPublisher();
+        var service = CreateService(
+            dbContext,
+            seed.Tenant.Id,
+            UserRole.Tenant,
+            new FakeAttachmentGateway(),
+            publisher);
+
+        var result = await service.ConfirmUploadAsync(
+            seed.Request.Id,
+            ValidConfirmRequest(ValidObjectKey(seed.Request.Id)),
+            CancellationToken.None);
+
+        Assert.Equal(AttachmentServiceStatus.Success, result.Status);
+        Assert.True(result.Value!.NotificationQueued);
+        var published = Assert.Single(publisher.PublishedEvents);
+        Assert.Equal("AttachmentConfirmed", published.EventType);
+        Assert.Equal(seed.Request.Id, published.MaintenanceRequestId);
+        Assert.Single(dbContext.MaintenanceRequestAttachments);
+    }
+
+    [Fact]
     public async Task FailedObjectVerificationDoesNotStoreMetadata()
     {
         await using var dbContext = CreateContext();
@@ -295,10 +321,12 @@ public sealed class MaintenanceAttachmentServiceTests
         AppDbContext dbContext,
         Guid userProfileId,
         UserRole role,
-        FakeAttachmentGateway gateway)
+        FakeAttachmentGateway gateway,
+        ITask2NotificationPublisher? notificationPublisher = null)
     {
         var currentUser = new FakeCurrentUserService(userProfileId, role);
-        var requestService = new MaintenanceRequestService(dbContext, currentUser);
+        var publisher = notificationPublisher ?? new RecordingNotificationPublisher();
+        var requestService = new MaintenanceRequestService(dbContext, currentUser, publisher);
         return new MaintenanceAttachmentService(
             dbContext,
             requestService,
@@ -310,7 +338,8 @@ public sealed class MaintenanceAttachmentServiceTests
                 ApiKey = "unit-test-placeholder",
                 MaxFileSizeBytes = Task2AttachmentOptions.DefaultMaxFileSizeBytes,
                 UrlExpirySeconds = Task2AttachmentOptions.DefaultUrlExpirySeconds
-            }));
+            }),
+            publisher);
     }
 
     private static async Task<AttachmentSeed> SeedAsync(AppDbContext dbContext)

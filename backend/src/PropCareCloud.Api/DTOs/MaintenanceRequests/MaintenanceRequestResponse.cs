@@ -20,4 +20,8 @@ public sealed record MaintenanceRequestResponse(
     DateTime? UpdatedAtUtc,
     DateTime? CompletedAtUtc,
     int CommentCount,
-    int AttachmentCount);
+    int AttachmentCount)
+{
+    public bool? NotificationQueued { get; init; }
+    public string? NotificationMessage { get; init; }
+}

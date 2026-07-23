@@ -5,6 +5,7 @@ using PropCareCloud.Api.Data;
 using PropCareCloud.Api.Domain.Entities;
 using PropCareCloud.Api.Domain.Enums;
 using PropCareCloud.Api.DTOs.MaintenanceRequests;
+using PropCareCloud.Api.DTOs.Notifications;
 using PropCareCloud.Api.Services;
 
 namespace PropCareCloud.Api.Tests;
@@ -112,6 +113,119 @@ public sealed class MaintenanceRequestServiceTests
         Assert.NotNull(updated);
         Assert.Equal(MaintenanceStatus.Completed, updated.Status);
         Assert.NotNull(updated.CompletedAtUtc);
+    }
+
+    [Fact]
+    public async Task CreateRequestAsync_PublishesCreatedEventAfterPersistence()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedMaintenanceGraphAsync(dbContext, includeRequest: false);
+        var publisher = new RecordingNotificationPublisher();
+        var service = CreateService(dbContext, notificationPublisher: publisher);
+
+        var created = await service.CreateRequestAsync(new MaintenanceRequestCreateRequest
+        {
+            RentalUnitId = seed.Unit.Id,
+            TenantProfileId = seed.Tenant.Id,
+            Title = "Notification test",
+            Description = "The request must be saved before notification dispatch.",
+            Category = MaintenanceCategory.Other,
+            Priority = MaintenancePriority.Low
+        });
+
+        Assert.NotNull(created);
+        Assert.True(created.NotificationQueued);
+        var published = Assert.Single(publisher.PublishedEvents);
+        Assert.Equal(NotificationEventTypes.MaintenanceRequestCreated, published.EventType);
+        Assert.Equal(created.Id, published.MaintenanceRequestId);
+        Assert.Equal(1, await dbContext.MaintenanceRequests.CountAsync());
+    }
+
+    [Fact]
+    public async Task AssignRequestAsync_PublishesOnlyWhenAssignmentChanges()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedMaintenanceGraphAsync(dbContext);
+        var publisher = new RecordingNotificationPublisher();
+        var service = CreateService(dbContext, notificationPublisher: publisher);
+
+        var first = await service.AssignRequestAsync(
+            seed.Request!.Id,
+            new MaintenanceRequestAssignRequest
+            {
+                AssignedStaffProfileId = seed.Staff.Id
+            });
+        var unchanged = await service.AssignRequestAsync(
+            seed.Request.Id,
+            new MaintenanceRequestAssignRequest
+            {
+                AssignedStaffProfileId = seed.Staff.Id
+            });
+
+        Assert.NotNull(first);
+        Assert.NotNull(unchanged);
+        var published = Assert.Single(publisher.PublishedEvents);
+        Assert.Equal(NotificationEventTypes.MaintenanceRequestAssigned, published.EventType);
+    }
+
+    [Fact]
+    public async Task UpdateStatusAsync_PublishesOnlyWhenStatusChanges()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedMaintenanceGraphAsync(dbContext);
+        var publisher = new RecordingNotificationPublisher();
+        var service = CreateService(dbContext, notificationPublisher: publisher);
+
+        var first = await service.UpdateStatusAsync(
+            seed.Request!.Id,
+            new MaintenanceRequestStatusUpdateRequest
+            {
+                Status = MaintenanceStatus.UnderReview
+            });
+        var unchanged = await service.UpdateStatusAsync(
+            seed.Request.Id,
+            new MaintenanceRequestStatusUpdateRequest
+            {
+                Status = MaintenanceStatus.UnderReview
+            });
+
+        Assert.NotNull(first);
+        Assert.NotNull(unchanged);
+        var published = Assert.Single(publisher.PublishedEvents);
+        Assert.Equal(
+            NotificationEventTypes.MaintenanceRequestStatusChanged,
+            published.EventType);
+    }
+
+    [Fact]
+    public async Task PublisherFailureDoesNotRollbackCreatedRequest()
+    {
+        var options = CreateOptions();
+        await using var dbContext = new AppDbContext(options);
+        var seed = await SeedMaintenanceGraphAsync(dbContext, includeRequest: false);
+        var publisher = new RecordingNotificationPublisher
+        {
+            Result = NotificationDispatchResult.Failed(
+                "Update saved, but notification delivery is temporarily unavailable.")
+        };
+        var service = CreateService(dbContext, notificationPublisher: publisher);
+
+        var created = await service.CreateRequestAsync(new MaintenanceRequestCreateRequest
+        {
+            RentalUnitId = seed.Unit.Id,
+            TenantProfileId = seed.Tenant.Id,
+            Title = "Non-breaking failure",
+            Description = "A publisher failure must not roll back the request.",
+            Category = MaintenanceCategory.Other,
+            Priority = MaintenancePriority.Medium
+        });
+
+        Assert.NotNull(created);
+        Assert.False(created.NotificationQueued);
+        Assert.Equal(1, await dbContext.MaintenanceRequests.CountAsync());
     }
 
     [Fact]
@@ -526,11 +640,13 @@ public sealed class MaintenanceRequestServiceTests
     private static MaintenanceRequestService CreateService(
         AppDbContext dbContext,
         Guid? userProfileId = null,
-        UserRole role = UserRole.AdminOwner)
+        UserRole role = UserRole.AdminOwner,
+        ITask2NotificationPublisher? notificationPublisher = null)
     {
         return new MaintenanceRequestService(
             dbContext,
-            new FakeCurrentUserService(userProfileId ?? Guid.NewGuid(), role));
+            new FakeCurrentUserService(userProfileId ?? Guid.NewGuid(), role),
+            notificationPublisher ?? new RecordingNotificationPublisher());
     }
 
     private static async Task<MaintenanceSeed> SeedMaintenanceGraphAsync(

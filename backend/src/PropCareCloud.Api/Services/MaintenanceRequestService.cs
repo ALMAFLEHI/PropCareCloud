@@ -3,6 +3,7 @@ using PropCareCloud.Api.Data;
 using PropCareCloud.Api.Domain.Entities;
 using PropCareCloud.Api.Domain.Enums;
 using PropCareCloud.Api.DTOs.MaintenanceRequests;
+using PropCareCloud.Api.DTOs.Notifications;
 
 namespace PropCareCloud.Api.Services;
 
@@ -27,7 +28,8 @@ public interface IMaintenanceRequestService
 
 public sealed class MaintenanceRequestService(
     AppDbContext dbContext,
-    ICurrentUserService currentUser) : IMaintenanceRequestService
+    ICurrentUserService currentUser,
+    ITask2NotificationPublisher notificationPublisher) : IMaintenanceRequestService
 {
     public async Task<List<MaintenanceRequestResponse>> GetRequestsAsync(
         MaintenanceStatus? status = null,
@@ -128,7 +130,22 @@ public sealed class MaintenanceRequestService(
         dbContext.MaintenanceRequests.Add(maintenanceRequest);
         await dbContext.SaveChangesAsync();
 
-        return await GetRequestByIdAsync(maintenanceRequest.Id);
+        var response = await GetRequestByIdAsync(maintenanceRequest.Id);
+        if (response is null)
+        {
+            return null;
+        }
+
+        var dispatch = await notificationPublisher.PublishAsync(NotificationEvent.Create(
+            NotificationEventTypes.MaintenanceRequestCreated,
+            maintenanceRequest.Id,
+            currentUser.UserProfileId,
+            NotificationTargetRoles.Multiple,
+            [maintenanceRequest.TenantProfileId],
+            "Maintenance request created",
+            "A maintenance request was submitted and is ready for review."));
+
+        return ApplyNotificationResult(response, dispatch);
     }
 
     public async Task<MaintenanceRequestResponse?> UpdateRequestAsync(
@@ -181,6 +198,8 @@ public sealed class MaintenanceRequestService(
             return null;
         }
 
+        var assignmentChanged =
+            maintenanceRequest.AssignedStaffProfileId != request.AssignedStaffProfileId;
         maintenanceRequest.AssignedStaffProfileId = request.AssignedStaffProfileId;
         if (maintenanceRequest.Status is MaintenanceStatus.Submitted or MaintenanceStatus.UnderReview)
         {
@@ -190,7 +209,22 @@ public sealed class MaintenanceRequestService(
 
         await dbContext.SaveChangesAsync();
 
-        return await GetRequestByIdAsync(maintenanceRequest.Id);
+        var response = await GetRequestByIdAsync(maintenanceRequest.Id);
+        if (response is null || !assignmentChanged)
+        {
+            return response;
+        }
+
+        var dispatch = await notificationPublisher.PublishAsync(NotificationEvent.Create(
+            NotificationEventTypes.MaintenanceRequestAssigned,
+            maintenanceRequest.Id,
+            currentUser.UserProfileId,
+            NotificationTargetRoles.Multiple,
+            [maintenanceRequest.TenantProfileId, request.AssignedStaffProfileId],
+            "Maintenance request assigned",
+            "A maintenance request was assigned to maintenance staff."));
+
+        return ApplyNotificationResult(response, dispatch);
     }
 
     public async Task<MaintenanceRequestResponse?> UpdateStatusAsync(
@@ -203,11 +237,34 @@ public sealed class MaintenanceRequestService(
             return null;
         }
 
+        var statusChanged = maintenanceRequest.Status != request.Status;
         ApplyStatus(maintenanceRequest, request.Status);
 
         await dbContext.SaveChangesAsync();
 
-        return await GetRequestByIdAsync(maintenanceRequest.Id);
+        var response = await GetRequestByIdAsync(maintenanceRequest.Id);
+        if (response is null || !statusChanged)
+        {
+            return response;
+        }
+
+        var targetProfileIds = new[]
+            {
+                (Guid?)maintenanceRequest.TenantProfileId,
+                maintenanceRequest.AssignedStaffProfileId
+            }
+            .Where(id => id.HasValue)
+            .Select(id => id!.Value);
+        var dispatch = await notificationPublisher.PublishAsync(NotificationEvent.Create(
+            NotificationEventTypes.MaintenanceRequestStatusChanged,
+            maintenanceRequest.Id,
+            currentUser.UserProfileId,
+            NotificationTargetRoles.Multiple,
+            targetProfileIds,
+            "Maintenance request status changed",
+            "The status of a maintenance request was updated."));
+
+        return ApplyNotificationResult(response, dispatch);
     }
 
     public async Task<bool> DeleteRequestAsync(Guid id)
@@ -398,4 +455,13 @@ public sealed class MaintenanceRequestService(
             ? DateTime.UtcNow
             : null;
     }
+
+    private static MaintenanceRequestResponse ApplyNotificationResult(
+        MaintenanceRequestResponse response,
+        NotificationDispatchResult dispatch) =>
+        response with
+        {
+            NotificationQueued = dispatch.NotificationQueued,
+            NotificationMessage = dispatch.NotificationMessage
+        };
 }

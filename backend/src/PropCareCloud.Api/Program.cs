@@ -116,6 +116,12 @@ builder.Services.AddHttpClient<ITask2AttachmentGateway, Task2AttachmentGatewayCl
 {
     client.Timeout = TimeSpan.FromSeconds(10);
 });
+builder.Services.Configure<Task2NotificationOptions>(
+    builder.Configuration.GetSection(Task2NotificationOptions.SectionName));
+builder.Services.AddHttpClient<ITask2NotificationPublisher, Task2NotificationPublisher>(client =>
+{
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 if (isDatabaseConfigured)
 {
     builder.Services.AddDbContext<AppDbContext>(options =>

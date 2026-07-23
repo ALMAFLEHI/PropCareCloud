@@ -48,7 +48,11 @@ public sealed record MaintenanceAttachmentResponse(
     long SizeBytes,
     Guid UploadedByUserProfileId,
     string UploadedByName,
-    DateTime UploadedAtUtc);
+    DateTime UploadedAtUtc)
+{
+    public bool? NotificationQueued { get; init; }
+    public string? NotificationMessage { get; init; }
+}
 
 public sealed record AttachmentDownloadAuthorizationResponse(
     string DownloadUrl,

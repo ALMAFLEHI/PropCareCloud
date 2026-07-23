@@ -33,14 +33,30 @@ Sprint 17 adds a serverless attachment microservice:
 - Existing backend-to-API Gateway calls protected by a backend-only API key and usage plan.
 - Presigned POST upload policies limited to approved content types, a 10 MB maximum, and five-minute expiry.
 
-Later Task 2 sprints propose:
+Sprint 18 adds a separate asynchronous notification stack:
 
-- New Task 2 component: Amazon SNS topic for attachment upload events.
-- New Task 2 component: Amazon SQS queue for durable event handling.
-- New Task 2 component: Amazon CloudWatch metrics and logs.
-- New Task 2 component: AWS X-Ray tracing for API Gateway and Lambda.
+- New backend-only API Gateway route and publisher Lambda.
+- Encrypted Amazon SNS topic.
+- Encrypted Amazon SQS queue with an encrypted dead-letter queue and redrive policy.
+- Processor Lambda with partial batch failure support.
+- Structured Lambda runtime logs retained for 14 days.
+
+Sprint 19 remains responsible for custom CloudWatch monitoring and X-Ray tracing.
 
 The existing backend remains the security boundary. It validates JWT identity, role permissions, maintenance request access, and tenant isolation before calling the serverless attachment service.
+
+```mermaid
+flowchart LR
+    Browser["React frontend on S3"] --> Backend["ASP.NET Core on Elastic Beanstalk"]
+    Backend --> RDS["Amazon RDS PostgreSQL"]
+    Backend --> Gateway["Sprint 18 API Gateway"]
+    Gateway --> Publisher["Publisher Lambda"]
+    Publisher --> SNS["Encrypted SNS topic"]
+    SNS --> Queue["Encrypted SQS queue"]
+    Queue --> Processor["Processor Lambda"]
+    Processor --> Logs["Structured CloudWatch runtime logs"]
+    Queue -->|"redrive after 3 receives"| DLQ["Encrypted SQS DLQ"]
+```
 
 ## 4. Architecture Change Summary
 
@@ -69,9 +85,20 @@ The existing backend remains the security boundary. It validates JWT identity, r
 11. Authorized users list metadata through the backend.
 12. Backend requests a five-minute presigned GET from Lambda for authorized downloads.
 
-Sprint 18 may add the previously designed SNS and SQS notification path without changing this Sprint 17 upload flow.
+Sprint 18 adds notification publishing after attachment metadata persistence without changing this Sprint 17 upload flow.
 
-## 6. Security Design
+## 6. Notification Event Flow
+
+1. The backend commits the maintenance creation, assignment, status, or attachment operation.
+2. It creates a safe version `1.0` event with generated event and correlation IDs.
+3. The backend calls `POST /notifications/publish` with a backend-only API key.
+4. Publisher Lambda validates the allowlisted contract and publishes to encrypted SNS.
+5. SNS delivers the raw event to encrypted SQS.
+6. Processor Lambda validates each message again and records a safe structured processing result.
+7. Successful messages are removed; repeated failures are redriven to the encrypted DLQ after three receives.
+8. A notification dispatch failure never rolls back the committed business operation.
+
+## 7. Security Design
 
 - Existing backend remains the authentication and RBAC boundary.
 - The frontend must never contain AWS credentials.
@@ -91,17 +118,25 @@ Sprint 18 may add the previously designed SNS and SQS notification path without 
 - S3 Block Public Access, bucket-owner enforcement, and SSE-S3 encryption are enabled.
 - S3 CORS permits only the deployed frontend and local development origins.
 - Attachment bytes never pass through Elastic Beanstalk or RDS.
+- The Sprint 18 API key is stored only in Elastic Beanstalk and is never sent to the browser.
+- Publisher Lambda can publish only to the Sprint 18 SNS topic and has no S3, SQS, or RDS access.
+- Processor Lambda can consume only the Sprint 18 primary queue and has no S3, SNS, or RDS access.
+- The SQS queue policy permits `SendMessage` only from the Sprint 18 SNS topic.
+- SNS, the primary SQS queue, and the DLQ use server-side encryption.
+- Notification payloads exclude passwords, tokens, connection strings, addresses, and unnecessary personal data.
 - No sensitive values should appear in architecture files, screenshots, or repository documentation.
 
-## 7. Reliability and Availability
+## 8. Reliability and Availability
 
 - Existing Task 1 application remains independent if the attachment service fails.
 - Direct browser-to-S3 upload reduces load on Elastic Beanstalk.
 - Lambda provides automatic scaling for the presigned URL service.
-- SNS and SQS reliability controls remain planned for Sprint 18.
+- SNS fan-out and SQS buffering decouple notification processing from the user request.
+- Partial batch failure allows only malformed or failed messages to retry.
+- The primary queue retains messages for four days and redrives after three receives.
 - Existing RDS data remains the source of truth for business metadata.
 
-## 8. Cost-Conscious Design
+## 9. Cost-Conscious Design
 
 - Serverless services operate only when used.
 - S3 stores attachment objects separately from RDS.
@@ -111,7 +146,7 @@ Sprint 18 may add the previously designed SNS and SQS notification path without 
 - Test traffic will be controlled.
 - No duplicate database or second full backend environment is required.
 
-## 9. Monitoring Design
+## 10. Monitoring Design
 
 Elastic Beanstalk / EC2:
 
@@ -154,7 +189,9 @@ X-Ray:
 - Service map.
 - Latency and failure analysis.
 
-## 10. Sprint 17 Live Deployment
+Sprint 18 uses only normal Lambda runtime log groups as processing evidence. Custom dashboards, alarms, metrics analysis, and X-Ray are deliberately deferred to Sprint 19.
+
+## 11. Sprint 17 Live Deployment
 
 - CloudFormation stack `propcarecloud-task2-sprint17` is `UPDATE_COMPLETE` in `us-east-1`.
 - The deployed service contains the REST API `prod` stage, Python 3.12 Lambda, private encrypted attachment bucket, scoped IAM role, API key, usage plan, and Lambda log group.
@@ -165,7 +202,20 @@ X-Ray:
 - Live authorization, private upload, object verification, metadata persistence/listing, secure download, duplicate rejection, and unsigned-access denial passed.
 - SNS, SQS, a custom CloudWatch dashboard, and X-Ray configuration were not added in Sprint 17.
 
-## 11. Task 1 Protection
+## 12. Sprint 18 Live Deployment
+
+- Separate stack `propcarecloud-task2-sprint18` is `CREATE_COMPLETE` in `us-east-1`.
+- API Gateway requires a service key on `POST /notifications/publish`; its usage plan uses rate 5, burst 10, and quota 1,000/day.
+- Publisher and processor Lambdas are Active on Python 3.12.
+- SNS-to-SQS subscription is confirmed with raw message delivery.
+- SNS, SQS, and the DLQ are encrypted; the primary queue has four-day retention and `maxReceiveCount` 3.
+- The SQS event-source mapping is Enabled with batch size 5 and partial batch failure enabled.
+- Maintenance status, request creation, staff progress, and attachment confirmation produced queued notifications through the normal backend flow.
+- Structured publisher and processor records matched on event and correlation IDs; the primary queue and DLQ were empty after processing.
+- Negative contract, API-key, authentication, RBAC, tenant-isolation, and duplicate-suppression tests passed.
+- CloudWatch runtime logs are evidence only; Sprint 19 monitoring was not implemented.
+
+## 13. Task 1 Protection
 
 - Task 1 deployment remains operational.
 - Existing S3 frontend bucket, Elastic Beanstalk application/environment, and RDS instance were preserved.
@@ -175,7 +225,7 @@ X-Ray:
 - Task 2 components are additive.
 - All future code changes must pass Task 1 regression validation.
 
-## 12. Sprint Mapping
+## 14. Sprint Mapping
 
 | Sprint | Scope |
 | --- | --- |

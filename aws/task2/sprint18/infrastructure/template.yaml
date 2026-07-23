@@ -1,0 +1,370 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: PropCare Cloud Task 2 Sprint 18 asynchronous notification pipeline
+
+Parameters:
+  LambdaCodeBucket:
+    Type: String
+    Description: Private deployment-artifact bucket containing Lambda ZIP files.
+  PublisherCodeKey:
+    Type: String
+    Description: S3 object key for the publisher Lambda ZIP.
+  ProcessorCodeKey:
+    Type: String
+    Description: S3 object key for the processor Lambda ZIP.
+
+Resources:
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: propcarecloud-task2-notifications
+      DisplayName: PropCare Task 2 notifications
+      KmsMasterKeyId: alias/aws/sns
+      Tags:
+        - Key: Project
+          Value: PropCareCloud
+        - Key: Task
+          Value: Task2
+        - Key: Sprint
+          Value: '18'
+        - Key: Environment
+          Value: Assignment
+
+  NotificationDeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: propcarecloud-task2-notification-events-dlq
+      MessageRetentionPeriod: 345600
+      SqsManagedSseEnabled: true
+      Tags:
+        - Key: Project
+          Value: PropCareCloud
+        - Key: Task
+          Value: Task2
+        - Key: Sprint
+          Value: '18'
+        - Key: Environment
+          Value: Assignment
+
+  NotificationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: propcarecloud-task2-notification-events
+      MessageRetentionPeriod: 345600
+      VisibilityTimeout: 60
+      SqsManagedSseEnabled: true
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt NotificationDeadLetterQueue.Arn
+        maxReceiveCount: 3
+      Tags:
+        - Key: Project
+          Value: PropCareCloud
+        - Key: Task
+          Value: Task2
+        - Key: Sprint
+          Value: '18'
+        - Key: Environment
+          Value: Assignment
+
+  NotificationQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref NotificationQueue
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AllowOnlySprint18Topic
+            Effect: Allow
+            Principal:
+              Service: sns.amazonaws.com
+            Action: sqs:SendMessage
+            Resource: !GetAtt NotificationQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Ref NotificationTopic
+          - Sid: DenyInsecureTransport
+            Effect: Deny
+            Principal: '*'
+            Action: sqs:*
+            Resource: !GetAtt NotificationQueue.Arn
+            Condition:
+              Bool:
+                aws:SecureTransport: false
+
+  NotificationSubscription:
+    Type: AWS::SNS::Subscription
+    DependsOn: NotificationQueuePolicy
+    Properties:
+      TopicArn: !Ref NotificationTopic
+      Protocol: sqs
+      Endpoint: !GetAtt NotificationQueue.Arn
+      RawMessageDelivery: true
+
+  PublisherFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: propcarecloud-task2-notification-publisher-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: propcarecloud-task2-publish-notification
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: sns:Publish
+                Resource: !Ref NotificationTopic
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/propcarecloud-task2-notification-publisher:*
+      Tags:
+        - Key: Project
+          Value: PropCareCloud
+        - Key: Task
+          Value: Task2
+        - Key: Sprint
+          Value: '18'
+
+  PublisherFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: propcarecloud-task2-notification-publisher
+      Runtime: python3.12
+      Handler: app.lambda_handler
+      Role: !GetAtt PublisherFunctionRole.Arn
+      Timeout: 10
+      MemorySize: 128
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Ref PublisherCodeKey
+      Environment:
+        Variables:
+          NOTIFICATION_TOPIC_ARN: !Ref NotificationTopic
+      Tags:
+        - Key: Project
+          Value: PropCareCloud
+        - Key: Task
+          Value: Task2
+        - Key: Sprint
+          Value: '18'
+        - Key: Environment
+          Value: Assignment
+
+  PublisherFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/propcarecloud-task2-notification-publisher
+      RetentionInDays: 14
+
+  ProcessorFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: propcarecloud-task2-notification-processor-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: propcarecloud-task2-process-notification
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:ReceiveMessage
+                  - sqs:DeleteMessage
+                  - sqs:GetQueueAttributes
+                Resource: !GetAtt NotificationQueue.Arn
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: !Sub arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/propcarecloud-task2-notification-processor:*
+      Tags:
+        - Key: Project
+          Value: PropCareCloud
+        - Key: Task
+          Value: Task2
+        - Key: Sprint
+          Value: '18'
+
+  ProcessorFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: propcarecloud-task2-notification-processor
+      Runtime: python3.12
+      Handler: app.lambda_handler
+      Role: !GetAtt ProcessorFunctionRole.Arn
+      Timeout: 15
+      MemorySize: 128
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Ref ProcessorCodeKey
+      Tags:
+        - Key: Project
+          Value: PropCareCloud
+        - Key: Task
+          Value: Task2
+        - Key: Sprint
+          Value: '18'
+        - Key: Environment
+          Value: Assignment
+
+  ProcessorFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/propcarecloud-task2-notification-processor
+      RetentionInDays: 14
+
+  NotificationEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      BatchSize: 5
+      Enabled: true
+      EventSourceArn: !GetAtt NotificationQueue.Arn
+      FunctionName: !Ref ProcessorFunction
+      FunctionResponseTypes:
+        - ReportBatchItemFailures
+
+  NotificationApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: propcarecloud-task2-notifications-api
+      Description: Backend-only notification publishing API for PropCare Cloud.
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+      Tags:
+        - Key: Project
+          Value: PropCareCloud
+        - Key: Task
+          Value: Task2
+        - Key: Sprint
+          Value: '18'
+
+  NotificationsResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NotificationApi
+      ParentId: !GetAtt NotificationApi.RootResourceId
+      PathPart: notifications
+
+  PublishResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref NotificationApi
+      ParentId: !Ref NotificationsResource
+      PathPart: publish
+
+  PublishMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref NotificationApi
+      ResourceId: !Ref PublishResource
+      HttpMethod: POST
+      AuthorizationType: NONE
+      ApiKeyRequired: true
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:${AWS::Partition}:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PublisherFunction.Arn}/invocations
+
+  NotificationApiDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - PublishMethod
+    Properties:
+      RestApiId: !Ref NotificationApi
+      Description: !Sub Sprint 18 deployment ${PublisherCodeKey}
+
+  NotificationApiStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:
+      RestApiId: !Ref NotificationApi
+      DeploymentId: !Ref NotificationApiDeployment
+      StageName: prod
+      MethodSettings:
+        - ResourcePath: '/*'
+          HttpMethod: '*'
+          ThrottlingBurstLimit: 10
+          ThrottlingRateLimit: 5
+      Tags:
+        - Key: Project
+          Value: PropCareCloud
+        - Key: Task
+          Value: Task2
+        - Key: Sprint
+          Value: '18'
+        - Key: Environment
+          Value: Assignment
+
+  NotificationApiKey:
+    Type: AWS::ApiGateway::ApiKey
+    DependsOn: NotificationApiStage
+    Properties:
+      Name: propcarecloud-task2-notifications-backend-key
+      Description: Backend-only key for the PropCare Cloud notification service.
+      Enabled: true
+
+  NotificationUsagePlan:
+    Type: AWS::ApiGateway::UsagePlan
+    DependsOn: NotificationApiStage
+    Properties:
+      UsagePlanName: propcarecloud-task2-notifications-usage-plan
+      ApiStages:
+        - ApiId: !Ref NotificationApi
+          Stage: prod
+      Throttle:
+        BurstLimit: 10
+        RateLimit: 5
+      Quota:
+        Limit: 1000
+        Period: DAY
+
+  NotificationUsagePlanKey:
+    Type: AWS::ApiGateway::UsagePlanKey
+    Properties:
+      KeyId: !Ref NotificationApiKey
+      KeyType: API_KEY
+      UsagePlanId: !Ref NotificationUsagePlan
+
+  NotificationApiLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref PublisherFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:${AWS::Partition}:execute-api:${AWS::Region}:${AWS::AccountId}:${NotificationApi}/*/POST/notifications/publish
+
+Outputs:
+  ApiBaseUrl:
+    Description: Base URL for backend notification publishing.
+    Value: !Sub https://${NotificationApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/prod
+  ApiKeyId:
+    Description: Identifier used to retrieve the backend-only API key securely.
+    Value: !Ref NotificationApiKey
+  TopicArn:
+    Description: Sprint 18 SNS topic ARN.
+    Value: !Ref NotificationTopic
+  QueueUrl:
+    Description: Sprint 18 primary SQS queue URL.
+    Value: !Ref NotificationQueue
+  DeadLetterQueueUrl:
+    Description: Sprint 18 dead-letter queue URL.
+    Value: !Ref NotificationDeadLetterQueue
+  PublisherFunctionName:
+    Value: !Ref PublisherFunction
+  ProcessorFunctionName:
+    Value: !Ref ProcessorFunction
+  EventSourceMappingId:
+    Value: !Ref NotificationEventSourceMapping

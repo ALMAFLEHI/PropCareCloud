@@ -183,7 +183,11 @@ function RequestDetailPage() {
         status: Number(value),
       })
       setRequest(updated)
-      setSuccessMessage('Status updated.')
+      setSuccessMessage(
+        updated.notificationMessage
+          ? `Status updated. ${updated.notificationMessage}`
+          : 'Status updated.',
+      )
     } catch {
       setError('Status update failed for this request.')
     } finally {
@@ -205,7 +209,11 @@ function RequestDetailPage() {
         assignedStaffProfileId: staffProfileId,
       })
       setRequest(updated)
-      setSuccessMessage('Assigned staff updated.')
+      setSuccessMessage(
+        updated.notificationMessage
+          ? `Assigned staff updated. ${updated.notificationMessage}`
+          : 'Assigned staff updated.',
+      )
     } catch {
       setError('Staff assignment failed for this request.')
     } finally {
@@ -293,7 +301,7 @@ function RequestDetailPage() {
         selectedAttachment,
         setUploadProgress,
       )
-      await confirmMaintenanceRequestAttachment(id, {
+      const confirmedAttachment = await confirmMaintenanceRequestAttachment(id, {
         ...uploadRequest,
         objectKey: authorization.objectKey,
       })
@@ -304,7 +312,11 @@ function RequestDetailPage() {
       if (attachmentInputRef.current) {
         attachmentInputRef.current.value = ''
       }
-      setSuccessMessage('Attachment uploaded securely.')
+      setSuccessMessage(
+        confirmedAttachment.notificationMessage
+          ? `Attachment uploaded securely. ${confirmedAttachment.notificationMessage}`
+          : 'Attachment uploaded securely.',
+      )
     } catch {
       setError('Attachment upload failed. Please check the file and try again.')
     } finally {
