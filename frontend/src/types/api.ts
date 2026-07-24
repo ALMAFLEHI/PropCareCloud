@@ -57,6 +57,15 @@ export type RentalUnitResponse = {
   createdAtUtc: string
 }
 
+export type RentalUnitCreateRequest = {
+  unitNumber: string
+  floor?: string | null
+  bedrooms?: number | null
+  status: ApiEnumValue
+}
+
+export type RentalUnitUpdateRequest = RentalUnitCreateRequest
+
 export type MaintenanceRequestResponse = {
   id: string
   rentalUnitId: string

@@ -23,7 +23,9 @@ import type {
   MaintenanceRequestStatusUpdateRequest,
   PropertyCreateRequest,
   PropertyResponse,
+  RentalUnitCreateRequest,
   RentalUnitResponse,
+  RentalUnitUpdateRequest,
   ResetUserPasswordRequest,
   SystemInfoResponse,
   TenantRegistrationApproveRequest,
@@ -124,6 +126,29 @@ export async function getUnitsByProperty(
 ): Promise<RentalUnitResponse[]> {
   const response = await propCareApi.get<RentalUnitResponse[]>(
     `/api/properties/${propertyId}/units`,
+  )
+  return response.data
+}
+
+export async function createRentalUnit(
+  propertyId: string,
+  payload: RentalUnitCreateRequest,
+): Promise<RentalUnitResponse> {
+  const response = await propCareApi.post<RentalUnitResponse>(
+    `/api/properties/${propertyId}/units`,
+    payload,
+  )
+  return response.data
+}
+
+export async function updateRentalUnit(
+  propertyId: string,
+  unitId: string,
+  payload: RentalUnitUpdateRequest,
+): Promise<RentalUnitResponse> {
+  const response = await propCareApi.put<RentalUnitResponse>(
+    `/api/properties/${propertyId}/units/${unitId}`,
+    payload,
   )
   return response.data
 }

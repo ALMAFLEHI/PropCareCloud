@@ -1,11 +1,27 @@
+import axios from 'axios'
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Building2, DoorOpen, Home, Plus, RefreshCcw, Wrench } from 'lucide-react'
-import { createProperty, getProperties, getUnitsByProperty } from '../api/propCareApi'
+import {
+  Building2,
+  DoorOpen,
+  Home,
+  Pencil,
+  Plus,
+  RefreshCcw,
+  Wrench,
+} from 'lucide-react'
+import {
+  createProperty,
+  createRentalUnit,
+  getProperties,
+  getUnitsByProperty,
+  updateRentalUnit,
+} from '../api/propCareApi'
 import EmptyState from '../components/EmptyState'
 import ErrorState from '../components/ErrorState'
 import LoadingState from '../components/LoadingState'
 import Modal from '../components/Modal'
 import StatusBadge from '../components/StatusBadge'
+import { useAuth } from '../context/AuthContext'
 import type { PropertyResponse, RentalUnitResponse } from '../types/api'
 import { formatDateTime } from '../utils/formatters'
 
@@ -18,7 +34,40 @@ const initialPropertyForm = {
   status: '0',
 }
 
+const initialUnitForm = {
+  unitNumber: '',
+  floor: '',
+  bedrooms: '',
+  status: '0',
+}
+
+function getRequestErrorMessage(error: unknown, fallback: string) {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as
+      | {
+          message?: string
+          errors?: Record<string, string[]>
+        }
+      | undefined
+    const validationMessage = data?.errors
+      ? Object.values(data.errors).flat()[0]
+      : undefined
+
+    return data?.message ?? validationMessage ?? fallback
+  }
+
+  return fallback
+}
+
+function getUnitStatusFormValue(status: RentalUnitResponse['status']) {
+  const normalized = String(status).toLowerCase()
+  if (status === 1 || normalized.includes('occupied')) return '1'
+  if (status === 2 || normalized.includes('maintenance')) return '2'
+  return '0'
+}
+
 function PropertiesPage() {
+  const { isAdminOwner, isPropertyManager } = useAuth()
   const [properties, setProperties] = useState<PropertyResponse[]>([])
   const [selectedPropertyId, setSelectedPropertyId] = useState('')
   const [units, setUnits] = useState<RentalUnitResponse[]>([])
@@ -29,6 +78,14 @@ function PropertiesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [form, setForm] = useState(initialPropertyForm)
+  const [unitModalMode, setUnitModalMode] = useState<'create' | 'edit' | null>(
+    null,
+  )
+  const [editingUnit, setEditingUnit] = useState<RentalUnitResponse | null>(null)
+  const [unitForm, setUnitForm] = useState(initialUnitForm)
+  const [unitFormError, setUnitFormError] = useState('')
+  const [isSavingUnit, setIsSavingUnit] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
 
   const selectedProperty = useMemo(
     () => properties.find((property) => property.id === selectedPropertyId),
@@ -43,6 +100,7 @@ function PropertiesPage() {
       units.filter((unit) => String(unit.status).toLowerCase() === '1' || String(unit.status).toLowerCase().includes('occupied')).length,
     [units],
   )
+  const canManageUnits = isAdminOwner || isPropertyManager
   const unitsUnderMaintenance = useMemo(
     () =>
       units.filter((unit) => String(unit.status).toLowerCase() === '2' || String(unit.status).toLowerCase().includes('maintenance')).length,
@@ -101,6 +159,47 @@ function PropertiesPage() {
     setForm((current) => ({ ...current, [field]: value }))
   }
 
+  function updateUnitForm(
+    field: keyof typeof initialUnitForm,
+    value: string,
+  ) {
+    setUnitForm((current) => ({ ...current, [field]: value }))
+  }
+
+  function closeUnitModal() {
+    setUnitModalMode(null)
+    setEditingUnit(null)
+    setUnitForm(initialUnitForm)
+    setUnitFormError('')
+  }
+
+  function openCreateUnitModal() {
+    if (!canManageUnits || !selectedProperty) return
+
+    setSuccessMessage('')
+    setEditingUnit(null)
+    setUnitForm(initialUnitForm)
+    setUnitFormError('')
+    setUnitModalMode('create')
+  }
+
+  function openEditUnitModal(unit: RentalUnitResponse) {
+    if (!canManageUnits) return
+
+    setSuccessMessage('')
+    setEditingUnit(unit)
+    setUnitForm({
+      unitNumber: unit.unitNumber,
+      floor: unit.floor ?? '',
+      bedrooms: unit.bedrooms === null || unit.bedrooms === undefined
+        ? ''
+        : String(unit.bedrooms),
+      status: getUnitStatusFormValue(unit.status),
+    })
+    setUnitFormError('')
+    setUnitModalMode('edit')
+  }
+
   async function handleCreateProperty(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsSubmitting(true)
@@ -121,6 +220,74 @@ function PropertiesPage() {
       setSelectedPropertyId(created.id)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  async function handleSaveUnit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!selectedPropertyId || !canManageUnits) return
+
+    const unitNumber = unitForm.unitNumber.trim()
+    if (!unitNumber) {
+      setUnitFormError('Unit number is required.')
+      return
+    }
+
+    if (unitNumber.length > 50 || unitForm.floor.trim().length > 50) {
+      setUnitFormError('Unit number and floor must be 50 characters or fewer.')
+      return
+    }
+
+    const bedrooms =
+      unitForm.bedrooms.trim() === '' ? null : Number(unitForm.bedrooms)
+    if (
+      bedrooms !== null &&
+      (!Number.isInteger(bedrooms) || bedrooms < 0 || bedrooms > 20)
+    ) {
+      setUnitFormError('Bedrooms must be a whole number between 0 and 20.')
+      return
+    }
+
+    setIsSavingUnit(true)
+    setUnitFormError('')
+
+    try {
+      const payload = {
+        unitNumber,
+        floor: unitForm.floor.trim() || null,
+        bedrooms,
+        status: Number(unitForm.status),
+      }
+
+      if (unitModalMode === 'edit' && editingUnit) {
+        await updateRentalUnit(selectedPropertyId, editingUnit.id, payload)
+      } else {
+        await createRentalUnit(selectedPropertyId, payload)
+      }
+
+      const [propertyData, unitData] = await Promise.all([
+        getProperties(),
+        getUnitsByProperty(selectedPropertyId),
+      ])
+      setProperties(propertyData)
+      setUnits(unitData)
+      setSuccessMessage(
+        unitModalMode === 'edit'
+          ? 'Rental unit updated successfully.'
+          : 'Rental unit created successfully.',
+      )
+      closeUnitModal()
+    } catch (saveError) {
+      setUnitFormError(
+        getRequestErrorMessage(
+          saveError,
+          unitModalMode === 'edit'
+            ? 'Rental unit could not be updated. Please try again.'
+            : 'Rental unit could not be created. Please try again.',
+        ),
+      )
+    } finally {
+      setIsSavingUnit(false)
     }
   }
 
@@ -188,6 +355,15 @@ function PropertiesPage() {
           </p>
         </article>
       </section>
+
+      {successMessage && (
+        <div
+          role="status"
+          className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800"
+        >
+          {successMessage}
+        </div>
+      )}
 
       {isLoading && <LoadingState title="Loading properties" />}
 
@@ -270,13 +446,25 @@ function PropertiesPage() {
           </div>
 
           <div className="premium-panel overflow-hidden">
-            <div className="border-b border-slate-200 px-5 py-4">
-              <h3 className="text-base font-semibold text-slate-950">
-                {selectedProperty?.name ?? 'Rental Units'}
-              </h3>
-              <p className="mt-1 text-sm text-slate-500">
-                Unit details for the selected property.
-              </p>
+            <div className="flex flex-col gap-3 border-b border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h3 className="text-base font-semibold text-slate-950">
+                  {selectedProperty?.name ?? 'Rental Units'}
+                </h3>
+                <p className="mt-1 text-sm text-slate-500">
+                  Unit details for the selected property.
+                </p>
+              </div>
+              {canManageUnits && selectedProperty && (
+                <button
+                  type="button"
+                  onClick={openCreateUnitModal}
+                  className="inline-flex w-fit items-center gap-2 rounded-md bg-cyan-700 px-3.5 py-2 text-sm font-semibold text-white hover:bg-cyan-800"
+                >
+                  <Plus className="size-4" aria-hidden="true" />
+                  Add Unit
+                </button>
+              )}
             </div>
 
             <div className="p-5">
@@ -290,10 +478,27 @@ function PropertiesPage() {
               {unitError && <ErrorState message={unitError} />}
 
               {!isLoadingUnits && !unitError && units.length === 0 && (
-                <EmptyState
-                  title="No units found"
-                  message="The selected property has no rental units yet."
-                />
+                <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center">
+                  <div className="mx-auto flex size-11 items-center justify-center rounded-md bg-slate-100 text-slate-600">
+                    <DoorOpen className="size-5" aria-hidden="true" />
+                  </div>
+                  <p className="mt-4 text-sm font-semibold text-slate-950">
+                    No units found
+                  </p>
+                  <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
+                    The selected property has no rental units yet.
+                  </p>
+                  {canManageUnits && (
+                    <button
+                      type="button"
+                      onClick={openCreateUnitModal}
+                      className="mt-5 inline-flex items-center gap-2 rounded-md bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800"
+                    >
+                      <Plus className="size-4" aria-hidden="true" />
+                      Add First Unit
+                    </button>
+                  )}
+                </div>
               )}
 
               {!isLoadingUnits && !unitError && units.length > 0 && (
@@ -313,7 +518,20 @@ function PropertiesPage() {
                             {unit.bedrooms ?? 'Not set'}
                           </p>
                         </div>
-                        <StatusBadge value={unit.status} kind="unit" />
+                        <div className="flex items-center gap-2">
+                          <StatusBadge value={unit.status} kind="unit" />
+                          {canManageUnits && (
+                            <button
+                              type="button"
+                              onClick={() => openEditUnitModal(unit)}
+                              className="inline-flex size-8 items-center justify-center rounded-md border border-slate-200 text-slate-600 hover:border-cyan-200 hover:bg-cyan-50 hover:text-cyan-800"
+                              aria-label={`Edit unit ${unit.unitNumber}`}
+                              title="Edit unit"
+                            >
+                              <Pencil className="size-3.5" aria-hidden="true" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                       <p className="mt-4 text-xs text-slate-500">
                         Created {formatDateTime(unit.createdAtUtc)}
@@ -412,6 +630,108 @@ function PropertiesPage() {
                 className="inline-flex justify-center rounded-md bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:cursor-not-allowed disabled:bg-slate-400"
               >
                 {isSubmitting ? 'Saving...' : 'Create Property'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {unitModalMode && selectedProperty && (
+        <Modal
+          title={unitModalMode === 'edit' ? 'Edit Unit' : 'Add Unit'}
+          description={`${unitModalMode === 'edit' ? 'Update' : 'Create'} a rental unit for ${selectedProperty.name}.`}
+          onClose={closeUnitModal}
+        >
+          <form className="space-y-4" onSubmit={handleSaveUnit}>
+            {unitFormError && (
+              <div
+                role="alert"
+                className="rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"
+              >
+                {unitFormError}
+              </div>
+            )}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="text-sm font-medium text-slate-700">
+                  Unit number
+                </span>
+                <input
+                  required
+                  maxLength={50}
+                  value={unitForm.unitNumber}
+                  onChange={(event) =>
+                    updateUnitForm('unitNumber', event.target.value)
+                  }
+                  className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+                />
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium text-slate-700">
+                  Floor
+                </span>
+                <input
+                  maxLength={50}
+                  value={unitForm.floor}
+                  onChange={(event) =>
+                    updateUnitForm('floor', event.target.value)
+                  }
+                  className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+                />
+              </label>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block">
+                <span className="text-sm font-medium text-slate-700">
+                  Bedrooms
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  max="20"
+                  step="1"
+                  value={unitForm.bedrooms}
+                  onChange={(event) =>
+                    updateUnitForm('bedrooms', event.target.value)
+                  }
+                  className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+                />
+              </label>
+              <label className="block">
+                <span className="text-sm font-medium text-slate-700">
+                  Status
+                </span>
+                <select
+                  value={unitForm.status}
+                  onChange={(event) =>
+                    updateUnitForm('status', event.target.value)
+                  }
+                  className="mt-2 w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-cyan-700 focus:ring-2 focus:ring-cyan-100"
+                >
+                  <option value="0">Available</option>
+                  <option value="1">Occupied</option>
+                  <option value="2">Under maintenance</option>
+                </select>
+              </label>
+            </div>
+            <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={closeUnitModal}
+                className="inline-flex justify-center rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSavingUnit}
+                className="inline-flex justify-center rounded-md bg-cyan-700 px-4 py-2 text-sm font-semibold text-white hover:bg-cyan-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+              >
+                {isSavingUnit
+                  ? 'Saving...'
+                  : unitModalMode === 'edit'
+                    ? 'Save Changes'
+                    : 'Create Unit'}
               </button>
             </div>
           </form>
