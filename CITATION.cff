@@ -7,8 +7,6 @@ date-released: 2026-07-24
 authors:
   - family-names: "Almaflehi"
     given-names: "Mohammed Abdulsalam"
-  - family-names: "Ibrahim"
-    given-names: "Guled"
 repository-code: "https://github.com/ALMAFLEHI/PropCareCloud"
 url: "http://propcarecloud-frontend-20260706.s3-website-us-east-1.amazonaws.com/"
 abstract: >-

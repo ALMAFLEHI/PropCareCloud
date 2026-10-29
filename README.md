@@ -245,7 +245,7 @@ PropCareCloud/
 
 ## Authors
 
-Built by **Mohammed Abdulsalam Almaflehi** and **Guled Ibrahim** for *CT071-3-3-DDAC — Designing and Developing Applications on the Cloud*.
+This system was produced within a team assignment for *CT071-3-3-DDAC — Designing and Developing Applications on the Cloud*. **Mohammed Abdulsalam Almaflehi** is the sole developer and repository author responsible for the complete technical implementation, including the frontend, backend, database, AWS cloud integration, deployment tooling, and testing.
 
 Repository maintained by [@ALMAFLEHI](https://github.com/ALMAFLEHI).
 
