@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use or reference PropCare Cloud, please cite this software."
+title: "PropCare Cloud"
+type: software
+version: 1.0.0
+date-released: 2026-07-24
+authors:
+  - family-names: "Almaflehi"
+    given-names: "Mohammed Abdulsalam"
+  - family-names: "Ibrahim"
+    given-names: "Guled"
+repository-code: "https://github.com/ALMAFLEHI/PropCareCloud"
+url: "http://propcarecloud-frontend-20260706.s3-website-us-east-1.amazonaws.com/"
+abstract: >-
+  PropCare Cloud is a multi-role property maintenance platform built with
+  React, ASP.NET Core, PostgreSQL, and AWS. It supports tenant onboarding,
+  property and maintenance workflows, private serverless attachments,
+  asynchronous notifications, and cloud observability.
+keywords:
+  - property management
+  - cloud computing
+  - aws
+  - asp.net core
+  - react
+  - postgresql
+  - serverless

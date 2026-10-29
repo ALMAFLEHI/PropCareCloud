@@ -1,439 +1,264 @@
+<div align="center">
+
 # PropCare Cloud
 
-PropCare Cloud is a planned cloud-based property maintenance and tenant service portal for managing rental property support requests, tenant communication, maintenance workflows, and owner oversight.
+### Cloud-native property maintenance operations, from tenant onboarding to monitored service delivery
 
-## Assignment
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Open_PropCare_Cloud-0088A9?style=for-the-badge&logo=amazonwebservices&logoColor=white)](http://propcarecloud-frontend-20260706.s3-website-us-east-1.amazonaws.com/)
+[![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?style=for-the-badge&logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
+[![React](https://img.shields.io/badge/React-19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)](https://react.dev/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Amazon_RDS-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://aws.amazon.com/rds/postgresql/)
+[![Tests](https://img.shields.io/badge/Backend_Tests-127_Passing-22C55E?style=for-the-badge)](#verified-engineering-results)
 
-- Module: CT071-3-3-DDAC Designing and Developing Applications on the Cloud
-- Chosen industry: Property Management
-- Methodology: Agile Iterative Development
+**A production-style, multi-role property maintenance platform built with React, ASP.NET Core, PostgreSQL, and AWS.**
 
-## Main Architecture
+[Live application](http://propcarecloud-frontend-20260706.s3-website-us-east-1.amazonaws.com/) · [Architecture](#cloud-architecture) · [Features](#product-capabilities) · [Local setup](#run-locally) · [Security](#security-and-privacy)
 
-The planned solution uses a separated frontend and backend architecture:
+</div>
 
-```text
-React frontend -> ASP.NET Core Web API -> EF Core -> Amazon RDS PostgreSQL
+![PropCare Cloud welcome experience](docs/sprints/screenshots/sprint_11_2_welcome_hero_mockup.png)
+
+## Product Overview
+
+PropCare Cloud connects tenants, property managers, maintenance teams, and portfolio owners through one secure service portal. The platform covers the full maintenance lifecycle: public tenant access requests, approval and unit assignment, issue reporting, staff coordination, status tracking, file attachments, in-app notifications, and operational monitoring.
+
+The project began as a conventional three-tier application and was extended with event-driven and serverless AWS services. The result demonstrates both application engineering and practical cloud architecture without placing AWS credentials or service secrets in the browser.
+
+## Product Capabilities
+
+| Area | What the system delivers |
+| --- | --- |
+| **Role-based workspaces** | Purpose-built dashboards and navigation for Admin / Owner, Property Manager, Tenant, and Maintenance Staff roles. |
+| **Tenant onboarding** | Public access requests, manager review, approval or rejection, account activation, and available-unit assignment. |
+| **Property operations** | Property and rental-unit management, occupancy-aware assignments, and portfolio-level visibility. |
+| **Maintenance workflow** | Request creation, categorisation, priority, staff assignment, progress states, comments, and activity history. |
+| **Tenant isolation** | Tenants can view their own assigned units and maintenance requests; staff see assigned work; managers retain operational oversight. |
+| **Secure attachments** | Backend-authorised upload and download flows using API Gateway, Lambda, short-lived pre-signed URLs, and a private S3 bucket. |
+| **Async notifications** | Non-blocking event publication through API Gateway, Lambda, SNS, SQS, a dead-letter queue, and a notification processor. |
+| **Operational visibility** | RDS-backed notification inbox plus CloudWatch dashboards, alarms, Logs Insights, and AWS X-Ray tracing. |
+
+## Application Showcase
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/sprints/screenshots/sprint_13_live_dashboard_admin.png" alt="Admin portfolio operations dashboard"></td>
+    <td width="50%"><img src="docs/sprints/screenshots/sprint_14_public_registration_page.png" alt="Public tenant registration page"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Portfolio operations dashboard</strong><br><sub>Live metrics, suggested actions, system health, and recent service activity.</sub></td>
+    <td align="center"><strong>Public tenant onboarding</strong><br><sub>Approval-controlled access requests with tenant privacy and unit assignment.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/sprints/screenshots/sprint_14_admin_pending_registration_review.png" alt="Tenant registration approval workspace"></td>
+    <td width="50%"><img src="docs/sprints/screenshots/sprint_17_live_attachment_upload.png" alt="Maintenance request attachment workflow"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Registration review workflow</strong><br><sub>Admin and manager review with approve, reject, and unit assignment actions.</sub></td>
+    <td align="center"><strong>Private maintenance attachments</strong><br><sub>Authorised files linked to requests through the serverless attachment service.</sub></td>
+  </tr>
+</table>
+
+## Cloud Architecture
+
+```mermaid
+flowchart TB
+    User["Tenants · Managers · Staff · Owners"]
+
+    subgraph Core["Core application"]
+        Web["React + TypeScript\nS3 static website"]
+        API["ASP.NET Core Web API\nElastic Beanstalk"]
+        DB[("PostgreSQL\nAmazon RDS")]
+    end
+
+    subgraph Attachments["Serverless attachment path"]
+        AG1["Amazon API Gateway"]
+        L1["Python Lambda\nPre-sign service"]
+        S3[("Private Amazon S3")]
+    end
+
+    subgraph Events["Asynchronous notification path"]
+        AG2["Amazon API Gateway"]
+        L2["Publisher Lambda"]
+        SNS["Amazon SNS"]
+        SQS["Amazon SQS + DLQ"]
+        L3["Processor Lambda"]
+    end
+
+    subgraph Observe["Observability"]
+        CW["Amazon CloudWatch\nDashboards · Logs · Alarms"]
+        XR["AWS X-Ray\nDistributed traces"]
+    end
+
+    User --> Web --> API --> DB
+    API -->|authorise upload/download| AG1 --> L1 --> S3
+    API -->|publish domain event| AG2 --> L2 --> SNS --> SQS --> L3 --> DB
+    API -. telemetry .-> CW
+    AG1 -. telemetry .-> CW
+    AG2 -. telemetry .-> CW
+    L1 -. traces .-> XR
+    L2 -. traces .-> XR
+    L3 -. traces .-> XR
 ```
 
-This keeps the user interface, business logic, and data persistence responsibilities separate and easier to extend across the assignment tasks.
+### Design Principles
 
-## Planned Tech Stack
+- **Backend-owned trust boundary:** JWT validation, role checks, tenant isolation, attachment authorisation, and service credentials stay server-side.
+- **Private object storage:** application files are stored in a private S3 bucket and accessed through short-lived pre-signed URLs.
+- **Non-blocking notifications:** business operations remain usable even when notification delivery is temporarily unavailable.
+- **Infrastructure as code:** Task 2 serverless resources are described with AWS CloudFormation templates and repeatable deployment scripts.
+- **Observable by design:** CloudWatch and X-Ray provide metrics, logs, alarms, and trace-level visibility across serverless flows.
 
-- Frontend: React with Vite
-- Backend: ASP.NET Core Web API
-- Data access: Entity Framework Core
-- Database: PostgreSQL hosted on Amazon RDS
-- Version control: Git
-- Documentation: Markdown under the `docs/` folder
-- Scripts: PowerShell helper scripts under the `scripts/` folder
+## Technology Stack
 
-## Planned AWS Services
+| Layer | Technologies |
+| --- | --- |
+| **Frontend** | React 19, TypeScript, Vite, Tailwind CSS, React Router, Axios, Lucide icons |
+| **Backend** | ASP.NET Core 8 Web API, Entity Framework Core, JWT Bearer authentication, BCrypt, Swagger / OpenAPI |
+| **Database** | PostgreSQL 16, Amazon RDS for PostgreSQL, EF Core migrations |
+| **AWS hosting** | Amazon S3 static website hosting, AWS Elastic Beanstalk, Amazon RDS |
+| **Serverless** | Amazon API Gateway, Python 3.12 AWS Lambda, private Amazon S3 |
+| **Messaging** | Amazon SNS, Amazon SQS, dead-letter queue processing |
+| **Observability** | Amazon CloudWatch dashboards, alarms and Logs Insights; AWS X-Ray |
+| **Quality** | xUnit, EF Core in-memory testing, PowerShell validation scripts, TypeScript compiler, Vite production build |
 
-- Task 1 current system:
-  - Amazon RDS for PostgreSQL
-  - AWS Elastic Beanstalk for the ASP.NET Core backend
-  - Amazon S3 static website hosting for the React frontend
-- Task 2 later enhancements:
-  - Amazon S3 for maintenance document or image storage
-  - Amazon API Gateway for cloud API exposure
-  - AWS Lambda for selected serverless workflows
-  - Amazon SNS or SQS for notifications and maintenance workflow messaging
-  - Amazon CloudWatch and AWS X-Ray for monitoring, logs, and tracing
+## Verified Engineering Results
 
-## Sprint Workflow Summary
+The following results are produced by repository validation scripts and the committed test suite:
 
-The project will be developed iteratively. Sprint 1 prepares the workspace, folder structure, documentation, and environment checks. Later sprints will introduce the React frontend, ASP.NET Core Web API, database design, cloud integration, security, deployment, and monitoring.
+| Check | Verified result |
+| --- | ---: |
+| Backend restore | Pass |
+| Backend build | Pass — 0 warnings, 0 errors |
+| Backend automated tests | **127 passed, 0 failed** |
+| Frontend dependency install | Pass |
+| Frontend TypeScript + Vite production build | Pass |
+| EF Core migrations represented in source | 7 application migrations |
+| Task 2 Lambda functions | 3 functions with focused Python tests |
 
-## Assignment Task Plan
-
-Task 1 covers the core PropCare Cloud system:
-
-- Core React frontend and ASP.NET Core backend system
-- Amazon RDS PostgreSQL cloud database
-- Elastic Beanstalk backend deployment
-- S3 static website frontend deployment
-- Tenant Registration & Approval Workflow
-- Task 1 final PowerPoint/PDF and ZIP package
-
-Task 2 is a later cloud-services extension:
-
-- Sprint 16: Task 2 Architecture Design
-- Sprint 17: API Gateway + Lambda + S3 Integration
-- Sprint 18: SNS + SQS Notification Pipeline
-- Sprint 19: CloudWatch + X-Ray Monitoring
-- Sprint 20: Task 2 DOCX Report
-
-Sprint 14 does not add API Gateway, Lambda, S3 maintenance attachments, SNS, SQS, CloudWatch, or X-Ray. Those services remain part of Task 2.
-
-## Task 2 Development
-
-- Sprint 16: Architecture Design - complete
-- Sprint 17: API Gateway + Lambda + S3 Integration - complete; live end-to-end verified
-- Sprint 18: SNS + SQS Notification Pipeline - complete; live end-to-end verified
-- Sprint 19: CloudWatch + X-Ray Monitoring and Notification Inbox - complete; live end-to-end verified
-- Sprint 20: Task 2 Final DOCX Report - next
-
-Task 2 extends the completed Task 1 cloud application on the `task2` branch. Sprint 17 provides backend-authorized direct-to-private-S3 maintenance attachments. Sprint 18 adds an asynchronous notification path from the existing ASP.NET Core backend through API Gateway, a Python 3.12 publisher Lambda, encrypted SNS, encrypted SQS with a dead-letter queue, and a Python 3.12 processor Lambda. Sprint 19 adds an RDS-backed current-user notification inbox, a compact React notification bell, a separate CloudWatch dashboard with focused alarms and Logs Insights widgets, and native active X-Ray tracing across both Task 2 API Gateway stages and all three Lambda functions. The live path was verified end to end while notification failure remains non-blocking for business operations. Task 1 remains operational, the backend remains the JWT, RBAC, tenant-isolation, and service-key boundary, and no AWS credential or service API key is exposed to the frontend.
-
-## Sprint 2 Backend Foundation
-
-- Backend solution: `backend/PropCareCloud.sln`
-- API project: `backend/src/PropCareCloud.Api`
-- Test project: `backend/tests/PropCareCloud.Api.Tests`
-- Validation command:
+Run the same local checks with:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
 ```
 
-## Sprint 3 Frontend Foundation
+## Run Locally
 
-- Frontend path: `frontend/`
-- Main stack: React, TypeScript, Vite, Tailwind CSS
-- Validation command:
+### Prerequisites
+
+- .NET SDK 8
+- Node.js and npm
+- PostgreSQL 16 or a compatible PostgreSQL instance
+- PowerShell 7 or Windows PowerShell
+
+### 1. Clone and install
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
+git clone https://github.com/ALMAFLEHI/PropCareCloud.git
+cd PropCareCloud
+
+cd frontend
+npm install
+cd ..
+
+dotnet restore .\backend\PropCareCloud.sln
 ```
 
-- Local run command:
+### 2. Configure local secrets
+
+The repository intentionally ships with an empty database connection string and empty JWT signing key. Use .NET user-secrets or environment variables; never commit real values.
+
+```powershell
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=propcarecloud_db;Username=<user>;Password=<password>" --project .\backend\src\PropCareCloud.Api
+dotnet user-secrets set "Jwt:SigningKey" "<strong-local-development-key>" --project .\backend\src\PropCareCloud.Api
+```
+
+For the frontend, copy `frontend/.env.example` to a local, ignored `.env` file and point it at the API:
+
+```dotenv
+VITE_API_BASE_URL=http://localhost:5015
+```
+
+### 3. Apply migrations and run
+
+```powershell
+dotnet ef database update --project .\backend\src\PropCareCloud.Api --startup-project .\backend\src\PropCareCloud.Api
+dotnet run --project .\backend\src\PropCareCloud.Api
+```
+
+In a second terminal:
 
 ```powershell
 cd frontend
 npm run dev
 ```
 
-## Sprint 4 Database Domain Foundation
+Open `http://localhost:5173/welcome`. Swagger is available in development mode at `http://localhost:5015/swagger`.
 
-- Database/domain model foundation created in `backend/src/PropCareCloud.Api/Domain`
-- EF Core `AppDbContext` created in `backend/src/PropCareCloud.Api/Data/AppDbContext.cs`
-- Planned database provider: Amazon RDS PostgreSQL
-- Validation command:
+## Project Structure
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
+```text
+PropCareCloud/
+├── frontend/                 React + TypeScript portal
+│   └── src/
+│       ├── api/              Typed backend client
+│       ├── components/       Shared interface components
+│       ├── context/          Authentication state
+│       └── pages/            Public and role-protected pages
+├── backend/
+│   ├── src/PropCareCloud.Api ASP.NET Core API and domain logic
+│   └── tests/                xUnit service, RBAC, isolation and persistence tests
+├── aws/task2/
+│   ├── sprint17/             API Gateway + Lambda + private S3 attachments
+│   ├── sprint18/             SNS + SQS notification pipeline
+│   └── sprint19/             CloudWatch + X-Ray monitoring
+├── scripts/                  Local validation and safe deployment helpers
+└── docs/                     Architecture decisions, sprint records and evidence
 ```
 
-RDS setup, real connection strings, and migrations will be handled in a later sprint.
+## Security and Privacy
 
-## Sprint 5 Database Migration Setup
+- No AWS access keys, database passwords, production JWT signing keys, private keys, or `.env` files are committed.
+- `appsettings.json` keeps `DefaultConnection`, `Jwt:SigningKey`, and Task 2 service API keys empty.
+- Passwords are stored as BCrypt hashes; login responses use signed JWTs.
+- RBAC is enforced in the backend, not only hidden in the frontend.
+- Tenant data is filtered through authenticated user profiles and active unit assignments.
+- S3 maintenance attachments remain private and use short-lived, authorised upload/download URLs.
+- Infrastructure templates use parameters and deployment-time configuration rather than embedded credentials.
 
-- EF Core migration foundation added.
-- Initial migration: `InitialCreate`.
-- PostgreSQL setup documentation: `docs/architecture/postgresql_local_setup.md`
-- Database status endpoint: `GET /api/database/status`
-- Validation command:
+## Current Limitations
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check-database-migration.ps1
-```
+- The public demo uses the Amazon S3 website endpoint over HTTP; a custom domain, CloudFront distribution, and TLS certificate are outside this academic project scope.
+- Authentication is application-managed JWT authentication rather than Amazon Cognito or another managed identity provider.
+- Notification delivery demonstrates the SNS/SQS processing path and an in-app inbox; external email/SMS delivery is not included.
+- Live availability depends on the associated AWS learning environment and may be paused to control cost.
+- This repository is an academic portfolio project and is not offered as a production service or dependency.
 
-Real database credentials, RDS connectivity, and cloud deployment are still deferred to later sprints.
+## Documentation
 
-## Sprint 6 Local PostgreSQL Readiness and Seed Data
+- Architecture and deployment guidance: [`docs/architecture`](docs/architecture)
+- Sprint implementation records: [`docs/sprints`](docs/sprints)
+- Task 2 infrastructure: [`aws/task2`](aws/task2)
+- Backend guide: [`backend/README.md`](backend/README.md)
+- Frontend guide: [`frontend/README.md`](frontend/README.md)
 
-- Sprint 6 is complete for local validation.
-- Local PostgreSQL readiness foundation added and tested with PostgreSQL 16.14.
-- Local database `propcarecloud_db` was used for EF migration and demo seed validation.
-- Database readiness endpoint: `GET /api/database/readiness`
-- Local demo seed endpoint: `POST /api/seed/demo-data`
-- Seed data foundation covers sample users, properties, units, maintenance requests, comments, and fake future S3-style attachment metadata.
-- The seed endpoint was tested successfully and repeat execution skipped duplicate demo data.
-- Local credentials must use user-secrets or environment variables; no real secrets are committed.
-- Validation command:
+## Authors
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check-seed-data.ps1
-```
+Built by **Mohammed Abdulsalam Almaflehi** and **Guled Ibrahim** for *CT071-3-3-DDAC — Designing and Developing Applications on the Cloud*.
 
-Amazon RDS connectivity, authentication, full CRUD screens, and AWS deployment remain deferred to later sprints.
+Repository maintained by [@ALMAFLEHI](https://github.com/ALMAFLEHI).
 
-## Sprint 7 Backend CRUD APIs
+## Citation
 
-- Backend CRUD APIs added for Task 1 system implementation.
-- Supports property and rental unit management.
-- Supports tenant maintenance request workflow, staff assignment, status updates, and comments.
-- Validation command:
+Academic and portfolio references can use the metadata in [`CITATION.cff`](CITATION.cff).
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check-crud-api.ps1
-```
+## Usage Notice
 
-Authentication, authorization enforcement, frontend CRUD integration, Amazon RDS, and AWS deployment remain deferred to later sprints.
+No open-source licence is currently granted. Source code is publicly visible for academic review and portfolio demonstration; all rights are reserved by the authors.
 
-## Sprint 8 Frontend CRUD Integration
+<div align="center">
 
-- React frontend integrated with Sprint 7 CRUD APIs.
-- Dashboard now shows live property/request counts and recent maintenance requests.
-- Properties page lists backend properties, displays selected property units, and creates properties.
-- Maintenance Requests page lists backend requests, creates demo requests with seeded IDs, and updates request status.
-- Full-stack local validation command:
+**PropCare Cloud — connected property operations, built and verified on AWS.**
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
-```
-
-Authentication, authorization enforcement, production-ready user lookup, Amazon RDS cloud connectivity, and AWS deployment remain deferred to later sprints.
-
-## Sprint 9 Authentication and Role-Based Dashboards
-
-- Sprint 9 is complete.
-- Demo JWT authentication added for assignment testing.
-- Demo accounts are available for Admin / Owner, Property Manager, Tenant, and Maintenance Staff roles.
-- Frontend login route: `/login`.
-- Main frontend routes are protected and redirect unauthenticated users to `/login`.
-- Dashboard and sidebar navigation adapt by signed-in role.
-- Demo passwords are stored in the database as BCrypt hashes, not plaintext.
-
-Demo credentials:
-
-| Role | Email | Password |
-| --- | --- | --- |
-| Admin / Owner | `admin@propcare.demo` | `PropCare@Admin123` |
-| Property Manager | `manager@propcare.demo` | `PropCare@Manager123` |
-| Tenant - Sara | `tenant@propcare.demo` | `PropCare@Tenant123` |
-| Tenant - Imran | `imran@propcare.demo` | `PropCare@Imran123` |
-| Maintenance Staff | `staff@propcare.demo` | `PropCare@Staff123` |
-
-Validation command:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
-```
-
-AWS Cognito, production password reset, email invitation flow, Amazon RDS cloud connectivity, and cloud deployment remain deferred to later sprints.
-
-## Sprint 9.1 Real Role-Based Access Control
-
-- Backend APIs now enforce role-based access instead of relying only on frontend route hiding.
-- Maintenance request data is filtered by signed-in role:
-  - Admin / Owner and Property Manager can view all demo requests.
-  - Tenant can view only their own requests.
-  - Maintenance Staff can view only assigned jobs.
-- Tenants can create maintenance requests only for active assigned rental units.
-- Maintenance Staff can update only assigned work to In Progress or Completed.
-- Property and rental unit APIs require Admin / Owner or Property Manager.
-- Frontend dashboards, request controls, assignment dropdowns, and status dropdowns now match the backend role rules.
-- Sprint 9.1 migration: `AddTenantUnitAssignments`.
-
-Validation commands:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
-```
-
-AWS Cognito, production invitations, Amazon RDS cloud connectivity, and cloud deployment remain deferred to later sprints.
-
-## Sprint 9.2 Tenant Unit Account Isolation
-
-- Sprint 9.2 is complete.
-- Multi-tenant account/unit logic validated for real SaaS-style tenant isolation.
-- Sara Tenant and Imran Tenant are separate demo tenant login accounts with separate `UserProfile` records.
-- The tenant isolation logic applies to all future tenants through authenticated `userProfileId` values and tenant-unit assignments.
-- One tenant can have multiple active assigned units.
-- One rental unit can have only one active tenant assignment at a time.
-- Tenants see only their own maintenance requests.
-- Tenants create maintenance requests only for their own active assigned units.
-- Admin / Owner and Property Manager can still see/manage portfolio-level request data.
-- Maintenance Staff still see only assigned jobs.
-- Sprint 9.2 migration: `HardenTenantUnitAssignmentIndexes`.
-
-Manual evidence screenshots were captured during final Sprint 9 evidence closure.
-
-## Sprint 9.3 Tenant Request and Unit Consistency
-
-- Sprint 9.3 is complete.
-- Manual validation found that demo request units and assigned units did not fully match.
-- Sara Tenant now has assigned units `B-1102` and `A-0101`.
-- Imran Tenant now has assigned units `A-0205` and `B-1208`.
-- Sara request units are only Sara assigned units.
-- Imran request units are only Imran assigned units.
-- The existing Sprint 9.2 model supports this without a new migration.
-- Tenant request creation remains limited to active assigned units for the authenticated tenant.
-
-Validation commands:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
-```
-
-## Sprint 9 Final Evidence Closure
-
-- Authentication and role-based dashboards are complete.
-- Sprint 9.1 backend RBAC enforcement is complete.
-- Sprint 9.2 tenant account/unit isolation is complete.
-- Sprint 9.3 tenant request/unit consistency is complete.
-- Manual evidence screenshots were captured and saved under `docs/sprints/screenshots/`.
-- Next sprint: Sprint 10 Admin User & Access Management.
-
-## Sprint 10 Admin User & Access Management
-
-- Sprint 10 is complete.
-- Admin User & Access Management module added.
-- Admin / Owner can list user accounts and filter by role/status.
-- Admin / Owner can create internal Property Manager and Maintenance Staff accounts.
-- Admin / Owner can edit profile names, disable/reactivate accounts, and reset passwords.
-- Disabled accounts cannot log in.
-- Admin / Owner can view tenant-unit assignments and assign tenants to available units.
-- One rental unit cannot have two active tenant assignments.
-- Evidence screenshots were captured under `docs/sprints/screenshots/`.
-- Tenant onboarding remains deferred to a future invitation/register flow.
-- No AWS Cognito, email sending, cloud deployment, or real secrets were added.
-
-Validation commands:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
-```
-
-## Sprint 11 Production UI/UX Polish & Workflow Enhancements
-
-- Sprint 11 is complete for code.
-- User-facing UI wording was cleaned so the application reads like a production property maintenance portal instead of sprint documentation.
-- Login, dashboards, properties, requests, and access management screens now use professional product wording.
-- Maintenance request detail route added: `/requests/:id`.
-- Status timeline component added for request progress tracking.
-- Activity notes are available from the request detail page with role-aware visibility.
-- Tenant request views remain read-only for status/assignment controls.
-- Maintenance Staff workflow remains limited to assigned jobs and allowed progress updates.
-- Admin / Owner and Property Manager assignment/status controls remain available.
-- Existing backend RBAC rules remain intact.
-- Evidence screenshots will be captured later under `docs/sprints/screenshots/`.
-
-Validation commands:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
-```
-
-## Sprint 11.1 Premium Visual Theme & Public Landing Page
-
-- Sprint 11.1 is complete for code.
-- General public landing page added at `/welcome`.
-- Premium visual theme layer added across the React frontend.
-- Login and app UI were visually polished with softer surfaces, shadows, transitions, and teal/navy accents.
-- Remaining visible developer-style request wording was cleaned up.
-- No backend, API, database, authentication, RBAC, or business functionality changes were made.
-- Evidence screenshots will be captured later under `docs/sprints/screenshots/`.
-
-Validation commands:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
-```
-
-## Sprint 11.2 Premium Landing & Portal Visual Storytelling
-
-- Sprint 11.2 is complete.
-- Premium landing page storytelling improved on `/welcome`.
-- CSS/JSX-only product mockup visual added to preview the service request workflow.
-- How it Works section added for report, assign, and track flow.
-- Trust/security cues added for role-based access, tenant privacy, manager oversight, staff assignment tracking, and activity history.
-- Login portal visual presentation improved with a visual-only side panel.
-- Logout now returns users to `/welcome` after the existing token/user clearing step.
-- No backend, API, database, authentication, RBAC, or business functionality changes were made.
-- Evidence screenshots were captured under `docs/sprints/screenshots/`.
-
-Validation commands:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
-```
-
-## Sprint 12 AWS RDS PostgreSQL Setup & Migration
-
-- Sprint 12 AWS RDS PostgreSQL setup and migration is complete.
-- Safe Amazon RDS PostgreSQL setup documentation was added under `docs/architecture/`.
-- Safe RDS helper scripts were added under `scripts/aws/`.
-- The backend can use `PROPCLOUD_CONNECTION_STRING` for RDS migration and local API runtime validation.
-- No real database passwords, AWS credentials, private keys, or `.env` files are committed.
-- Manual RDS setup, EF Core migration, API readiness, seed validation, and frontend RDS-backed dashboard evidence were captured.
-
-Validation commands:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
-```
-
-RDS support commands:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-aws-cli.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\aws\validate-rds-environment.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\aws\update-rds-database.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-rds-api-readiness.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\aws\seed-rds-demo-data.ps1
-```
-
-## Sprint 13 AWS Deployment
-
-- Sprint 13 AWS deployment is complete.
-- Backend API deployed to AWS Elastic Beanstalk:
-  `http://propcarecloud-api.us-east-1.elasticbeanstalk.com`
-- Frontend deployed to Amazon S3 static website hosting:
-  `http://propcarecloud-frontend-20260706.s3-website-us-east-1.amazonaws.com`
-- Amazon RDS PostgreSQL readiness was validated through the deployed backend.
-- Database readiness returned `canConnect: true`, `pendingMigrations: 0`, and `appliedMigrations: 4`.
-- Sprint 13 seed repair was deployed and validated.
-- The deployed admin dashboard shows seeded properties, units, users, tenant assignments, and maintenance requests.
-- No AWS keys, real passwords, full connection strings, private keys, or `.env` files are committed.
-
-Validation commands:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-sprint13-deployment-readiness.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\aws\check-sprint13-demo-data.ps1
-```
-
-## Sprint 14 Tenant Registration & Approval Workflow
-
-- Sprint 14 is complete.
-- Sprint 14 backend was deployed to Elastic Beanstalk and frontend was deployed to S3 static website hosting for final live validation.
-- Sprint 14 migration `AddTenantRegistrationRequests` was applied to Amazon RDS PostgreSQL.
-- Public tenant registration route added at `/register`.
-- Welcome and login pages now link to the tenant access request flow.
-- Public API endpoint added: `POST /api/tenant-registrations`.
-- Admin / Owner and Property Manager review APIs added for listing, approving, rejecting, and loading available units.
-- Protected frontend route added at `/tenant-registrations` for Admin / Owner and Property Manager.
-- Approval creates or activates a tenant portal account, hashes the temporary password with BCrypt, and assigns the tenant to an available rental unit.
-- Rejection marks the request rejected and does not create an account or tenant-unit assignment.
-- Existing demo accounts, JWT authentication, RBAC rules, tenant isolation, RDS support, and Sprint 13 deployment package scripts are preserved.
-- Demo seed data now includes approval-ready available units: `Cloud Residence - Unit A-0303` and `Harbor Heights - Unit B-1401`.
-- The approval available-units endpoint now returns only unassigned units with `Available` status.
-- Login page tenant access CTA was moved into a modern `New tenant?` secondary CTA block.
-- Welcome page tenant access CTA was moved out of the crowded hero CTA row into a separate premium panel.
-- Final login UX polish maps invalid credentials to a user-friendly message instead of a technical 401 error.
-- Sprint 14 migration: `AddTenantRegistrationRequests`.
-- Final evidence screenshots were captured under `docs/sprints/screenshots/`.
-- No AWS resources were created, updated, or deployed automatically by repository scripts.
-- No API Gateway, Lambda, S3 maintenance attachments, SNS/SQS, CloudWatch, or X-Ray work was added in Sprint 14.
-
-Validation commands:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\check-backend.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-frontend.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-fullstack-local.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-database-migration.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\check-seed-data.ps1
-```
-
-Next sprint: Sprint 15 - Task 1 Final Package.
+</div>
